@@ -32,7 +32,6 @@ our $VERSION  = '0.2';
 $usage = "
 	nmap2cvs.pl v$VERSION - (C) 2003 by Sebastian Wolfgarten, <sebastian\@wolfgarten.com>
 	--------------------------------------------------------------------------------
-
 	This software runs a TCP or UDP nmap scan against the target host and generates a nice
 	.csv file which could easily be imported into Excel or OpenOffice. It was written in a
 	hurry but it should work. Feel free to submit bugs or suggestions :-)
@@ -311,7 +310,7 @@ L<http://sourceforge.net/tracker/?group_id=97509&atid=618345>
 
 L<Nmap::Parser>
 
-The Nmap::Parser page can be found at: L<http://npx.sourceforge.net/>. It
+The Nmap::Parser page can be found at: L<http://www.nmapparser.com>. It
 contains the latest developments on the module.
 
 =head1 AUTHOR

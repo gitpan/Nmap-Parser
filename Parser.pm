@@ -9,7 +9,7 @@ require 5.004;
 use XML::Twig;
 use vars qw($S %H %OS_LIST %F $DEBUG %R $NMAP_EXE $VERSION);
 
-$VERSION = '0.78';
+$VERSION = '0.79';
 
 sub new {
 
@@ -18,7 +18,8 @@ $class = ref($class) || $class;
 
 $$self{twig}  = new XML::Twig(
 	start_tag_handlers 	=>
-			{nmaprun => \&_nmaprun_hdlr},
+			{nmaprun => \&_nmaprun_hdlr
+                         },
 
 	twig_roots 		=> {
 		scaninfo => \&_scaninfo_hdlr,
@@ -75,8 +76,8 @@ $$self{twig}->setIgnoreEltsHandlers({
 	'os'		=> ($F{osinfo} ? undef : 1),
 	'uptime' 	=> ($F{uptime} ? undef : 1),
 	'scaninfo' 	=> ($F{scaninfo} ? undef : 1),
-	'finished' 	=> ($F{scaninfo} ? undef : 1),
-	});
+	'finished' 	=> ($F{scaninfo} ? undef : 1)
+        });
 
 return \%F;
 
@@ -136,6 +137,7 @@ sub parsefile {
 	if($@){die $@;}
 	return $self;
 }
+
 sub parsescan {
 my $self = shift;
 my $nmap = shift;
@@ -210,20 +212,13 @@ sub get_scaninfo {return $S;}
 ################################################################################
 ##			PRIVATE TWIG HANDLERS				      ##
 ################################################################################
-
-sub _scaninfo_hdlr {
-my ($twig,$scan) = @_;
-my ($type,$proto,$num) = ($scan->{'att'}->{'type'},$scan->{'att'}->{'protocol'},
-$scan->{'att'}->{'numservices'});
-if(defined($type)){$S->{type}{$type} = $proto;$S->{numservices}{$type} = $num;}
-$twig->purge;}
-
-
+#parses nmaprun starting tag
 sub _nmaprun_hdlr {#Last tag in an nmap output
 my ($twig,$host) = @_;
 unless($F{scaninfo}){return;}
 $S->{start_time} = $host->{'att'}->{'start'};
 $S->{nmap_version} = $host->{'att'}->{'version'};
+$S->{startstr} = $host->{'att'}->{'startstr'};
 $S->{xml_version} = $host->{'att'}->{'xmloutputversion'};
 $S->{args} = $host->{'att'}->{'args'};
 $S = Nmap::Parser::ScanInfo->new($S);
@@ -232,10 +227,24 @@ $twig->purge;
 }
 
 
-sub _finished_hdlr {my ($twig,$host) = @_;$S->{finish_time} =
-$host->{'att'}->{'time'};$twig->purge;}
+#parses scaninfo tag
+sub _scaninfo_hdlr {
+my ($twig,$scan) = @_;
+my ($type,$proto,$num) = ($scan->{'att'}->{'type'},$scan->{'att'}->{'protocol'},
+$scan->{'att'}->{'numservices'});
+if(defined($type)){$S->{type}{$type} = $proto;$S->{numservices}{$type} = $num;}
+$twig->purge;}
+
+#last tag (finished)
+sub _finished_hdlr {my ($twig,$host) = @_;
+		    
+$S->{finish_time} = $host->{'att'}->{'time'};
+$S->{timestr} = $host->{'att'}->{'timestr'};
+
+$twig->purge;}
 
 
+#Parses all host information tag
 sub _host_hdlr {
 # handlers are always called with those 2 arguments
 my($twig, $host)= @_;
@@ -482,11 +491,15 @@ if($_[1] ne ''){return $_[0]->{numservices}{$_[1]};}
 else {my $total = 0;for (values %{$_[0]->{numservices}}){$total +=$_;}
 return $total;}
 }
+sub start_time {return $_[0]->{start_time};}
+sub start_str {return $_[0]->{startstr};}
+
 sub finish_time {return $_[0]->{finish_time};}
+sub time_str {return $_[0]->{timestr};}
+
 sub nmap_version {return $_[0]->{nmap_version};}
 sub xml_version {return $_[0]->{xml_version};}
 sub args {return $_[0]->{args};}
-sub start_time {return $_[0]->{start_time};}
 sub scan_types {ref($_[0]->{type}) eq 'HASH' ?
 			return (keys %{$_[0]->{type}}) :
 			return;}
@@ -543,11 +556,13 @@ my $param = lc($_[1]);
 return if($Nmap::Parser::F{portinfo} == 0);
 return unless(ref($_[0]->{ports}{$proto}) eq 'HASH');
 
-if($param eq 'closed' || $param eq 'filtered' || $param eq 'open')
+#the port parameter can be set to either any of these also 'open|filtered'
+#can count as 'open' and 'fileterd'. Therefore I need to use a regex from now on
+if($param =~ /[ofc](?:pen|ilter|losed)/  )
 {
 	my @matched_ports;
 	for my $p (keys %{ $_[0]->{'ports'}{$proto}   })
-	{	if($_[0]->{ports}{$proto}{$p}{state} eq $param)
+	{	if($_[0]->{ports}{$proto}{$p}{state} =~ /\Q$param\E/) #escape metacharacters ('|', for example in: open|filtered)
 			{push @matched_ports, $p;}
 	}
 	return sort {$a <=> $b} @matched_ports;
@@ -697,49 +712,34 @@ Nmap::Parser - parse nmap scan data with perl
 =head1 SYNOPSIS
 
   use Nmap::Parser;
-
- 	#PARSING
   my $np = new Nmap::Parser;
 
   $nmap_exe = '/usr/bin/nmap';
+  
+  $np->register_host_callback(\&my_callback)
+  
   $np->parsescan($nmap_exe,'-sT -p1-1023', @ips);
 
-  #or
+  # or just parse an existing output file
+  # $np->parsefile('nmap_output.xml') #using filenames
+  #parsescan() is useful for real-time scanning and information gathering
+  #while parsefile() is used more for offline analysis of nmap outputs.
 
-  $np->parsefile('nmap_output.xml') #using filenames
+ sub my_callback {
+   my $host_obj = shift; #see documentation for methods
+   my $address = $host_obj->ipv4_addr;
+   my $hostname = $host_obj->hostname;
+   #.. see documentation for all methods ...
 
- 	#GETTING SCAN INFORMATION
-
-  print "Scan Information:\n";
-  $si = $np->get_scaninfo();
-  #get scan information by calling methods
-  print
-  'Number of services scanned: '.$si->num_of_services()."\n",
-  'Start Time: '.$si->start_time()."\n",
-  'Scan Types: ',(join ' ',$si->scan_types())."\n";
-
- 	#GETTING HOST INFORMATION
-
-   print "Hosts scanned:\n";
-   for my $host_obj ($np->get_host_objects()){
-   print
-  'Hostname  : '.$host_obj->hostname()."\n",
-  'Address   : '.$host_obj->ipv4_addr()."\n",
-  'OS match  : '.$host_obj->os_match()."\n",
-  'Open Ports: '.(join ',',$host_obj->tcp_ports('open'))."\n";
-  	#... you get the idea...
    }
 
-  #frees memory - helpful when dealing with memory intensive scripts
-  $np->clean();
-
-  # ... do other stuff if you want ...
-
-I<Note: You can get the hosts the standard way - using get_host_objects(), or
-you can setup the script to use callback (recommended) methods for every host
-encountered. (see EXAMPLES for more information).>
-
 =head1 DESCRIPTION
+
+This perl module is here to ease the pain of developing scripts or collecting
+network information from nmap scans. Nmap::Parser does its task by parsing the
+information in the output of an nmap scan by using the xml-formatted output.
+An nmap parser for xml scan data using perl. Nmap Parser is a PERL module that
+makes developing security and audit tools using nmap and perl easier.
 
 This is an stand-alone output parser for nmap outputs. This uses the
 XML::Twig library which is fast and memory efficient. This module can perform an
@@ -748,11 +748,10 @@ nmap xml file, or it can take a filehandle that is piped from a current nmap run
 scan using '-oX -' switch (but you might as well use parsescan() ). This module
 was developed to speedup network security tool development when using nmap.
 
-This module is meant to be a balance of easy of use and efficiency. (more ease
-of use). I have added filtering capabilities and use various options on the twig
-library in order to incrase parsing speed and save memory usage. If you need
-more information from an nmap output that is not available in the release,
-please send your request. (see below).
+This module is meant to be a balance of easy of use and efficiency.
+I have added filtering capabilities to incrase parsing speed and save memory
+usage for parsing large nmap scan files. If you need more information from an
+nmap output that is not available in the release, please send your request.
 
 =head2 OVERVIEW
 
@@ -777,8 +776,13 @@ anyways.
 
 =item I<Run the parser>
 
-Parse the info. You use $np->parse() or $np->parsefile(), to parse the nmap
-xml information. This information is parsed and constructed internally.
+Parse the info. You use $np->parse(), $np->parsefile() or even $np->parsescan(),
+to parse the nmap information. This information is parsed and constructed internally.
+parsefile() expects an nmap-xml-output formatted file as the input. parsescan()
+on the other hand requires the nmap executable, command line options, and the list
+of IP addresses. It will run the scan, and automatically call parse() on the output.
+Usually parsefile() will be used for offline analysis while parsescan() will be used
+on the real-time network scanning and information gathering.
 
 =item I<Get the Scan Info>
 
@@ -819,7 +823,9 @@ If you are in a situation with memory constraints and are dealing with large
 nmap xml-output files, this little effort helps. After you are done with everything, you should do a $np->clean()
 to free up the memory used by maintaining the scan and hosts information
 from the scan. A much more efficient way to do is, once you are done using a
-host object, delete it.
+host object, delete it. B<If you use the register_host_callback method, you do
+not have to worry about memory since the host object gets deleted after the function
+returns.>
 
  		#Getting all IP addresses parsed
  for my $host ($np->get_host_list())
@@ -1007,7 +1013,7 @@ xml information is compliant. If you are using parsescan() or an open filehandle
 , make sure that the nmap scan that you are performing is successful in returning
 xml information. (Sometimes using loopback addresses causes nmap to fail).
 
-=item B<parsescan($nmap_exe, $args , @ips)> I<Experimental>
+=item B<parsescan($nmap_exe, $args , @ips)>
 
 This method takes as arguments the path to  the nmap executable (it could just
 be 'nmap' too), nmap command line options and a list of IP addresses. It
@@ -1138,11 +1144,19 @@ scan_types.
 
 =item B<start_time()>
 
-Returns the start time of the nmap scan.
+Returns the start time of the nmap scan. This is given in UNIX time_t notation.
+
+=item B<start_str()>
+
+Returns the human readable calendar time format of when a scan started
 
 =item B<finish_time()>
 
-Returns the finish time of the nmap scan.
+Returns the finish time of the nmap scan. This is given in UNIX time_t notation.
+
+=item B<time_str()>
+
+Returns the human readable calendar time format of when a scan finished.
 
 =item B<nmap_version()>
 
@@ -1244,7 +1258,7 @@ in the extraports tag)>.
 Returns the number of extra ports that nmap found to be in a given state. I<(The
 'count' attribute in the extraports tag)>.
 
-=item B<tcp_ports([$state])>, B<udp_ports([[$state]])>
+=item B<tcp_ports([$state])>, B<udp_ports([$state])>
 
 Returns an sorted array containing the tcp/udp ports that were scanned. If the
 optional 'state' paramter is passed, it will only return the ports that nmap
@@ -1264,10 +1278,15 @@ then all ports will return undef.>
 
 Again, you could filter what ports you wish to receive:
 
- #it can be either 'filtered', 'closed' or 'open'
-
+ #it can be either 'open', 'filtered', 'closed'
+ 
  my @filtered_ports = $host_obj->tcp_ports('filtered');
  my @open_ports = $host_obj->tcp_ports('open');
+
+It is important to note that ports that have been identified as 'open|filtered' or 'closed|filtered'
+will be counted as both 'open' and 'filtered'. If you specifically want only ports
+that have the identifier of 'open|filtered', then you must specifically state:
+C<tcp_port('open|filtered')> or C<udp_port('closed|filtered')> (for example).
 
 =item B<tcp_ports_count()>, B<udp_ports_count()>
 
@@ -1527,6 +1546,10 @@ callback function is called for every host that the parser encounters.
 Please submit any bugs to:
 L<http://sourceforge.net/tracker/?group_id=97509&atid=618345>
 
+Please make sure that you submit the xml-output file of the scan which you are having
+trouble. This can be done by running your scan with the I<-oX filename.xml> nmap switch.
+Please remove any important IP addresses for security reasons.
+
 =head1 PATCHES AND FEATURE REQUESTS
 
 Please submit any requests to:
@@ -1536,7 +1559,7 @@ L<http://sourceforge.net/tracker/?atid=618348&group_id=97509&func=browse>
 
  nmap, L<XML::Twig>
 
-The Nmap::Parser page can be found at: L<http://npx.sourceforge.net/>.
+The Nmap::Parser page can be found at: L<http://www.nmapparser.com> or L<http://npx.sourceforge.net>.
 It contains the latest developments on the module. The nmap security scanner
 homepage can be found at: L<http://www.insecure.org/nmap/>. This project is also
 on sourceforge.net: L<http://sourceforge.net/projects/npx/>
@@ -1553,7 +1576,7 @@ Oddbjorn Steffensen
 
 =head1 AUTHOR
 
-Anthony G Persaud <ironstar@iastate.edu>
+Anthony G Persaud <ironstar@iastate.edu> L<http://www.anthonypersaud.com>
 
 =head1 COPYRIGHT
 

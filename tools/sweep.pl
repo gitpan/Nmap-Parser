@@ -40,7 +40,7 @@ Getopt::Long::Configure('bundling');
 
 my $p = new Nmap::Parser;
 
-print "\nsweep.pl - ( http://npx.sourceforge.net )\n",
+print "\nsweep.pl - ( http://www.nmapparser.com )\n",
 	('-'x50),"\n\n";
 
 GetOptions(
@@ -289,7 +289,7 @@ L<http://sourceforge.net/tracker/?group_id=97509&atid=618345>
 
 L<Nmap::Parser>
 
-The Nmap::Parser page can be found at: L<http://npx.sourceforge.net/>.
+The Nmap::Parser page can be found at: L<http://www.nmapparser.com>.
 It contains the latest developments on the module. The nmap security scanner
 homepage can be found at: L<http://www.insecure.org/nmap/>.
 

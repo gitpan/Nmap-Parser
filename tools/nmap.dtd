@@ -1,17 +1,12 @@
 <!--
      nmap.dtd
      This is the DTD for nmap's XML output (-oX) format.
-     Tested against nmap-2.54BETA29
-     $Id: nmap.dtd,v 1.1 2004/02/16 01:28:41 apersaud Exp $
+     $Id: nmap.dtd,v 1.2 2004/12/21 21:31:59 apersaud Exp $
 
-     William McVey
-     <wam@cisco.com>
-     <wam+nmap@wamber.net>
+     Originally written by:
+     William McVey <wam@cisco.com> <wam+nmap@wamber.net>
 
-     Until officially adopted as a part of the nmap distribution, the latest
-     version of this DTD can be found linked off:
-     http://www.networkexploits.com/projects/nmap/
-
+     Now maintained by Fyodor <fyodor@insecure.org> as part of Nmap.
 
      To validate using this file, simply add a DOCTYPE line similar to:
      <!DOCTYPE nmaprun SYSTEM "nmap.dtd">
@@ -26,7 +21,7 @@
      specify "one each of this list of elements, in any order".  If there
      is a construct similar to SGML's '&' operator, please let me know.
 
-     Since the work to write this DTD was done as part of my
+     Since the work to write this DTD was done as part of WAM's
      job duties for the Cisco Secure Consulting Services group
      (http://www.cisco.com/go/securityconsulting), the following copyright
      needs to be included in this and any other derived works.
@@ -52,44 +47,44 @@
 
 -->
 
-
 <!-- parameter entities to specify common "types" used elsewhere in the DTD -->
 <!ENTITY % attr_numeric "CDATA" >
 <!ENTITY % attr_ipaddr "CDATA" >
 <!ENTITY % attr_numeric "CDATA" >
+<!ENTITY % attr_type "(ipv4 | ipv6 | mac)" >
 
 <!ENTITY % host_states "(up|down|unknown|skipped)" >
 
 <!-- see: nmap.c:statenum2str for list of port states -->
-<!ENTITY % port_states "(open|closed|filtered|UNfiltered|unknown)" >
+<!-- Maybe they should be enumerated as in scan_types below , but I -->
+<!-- don't know how to escape states like open|filtered -->
+<!ENTITY % port_states "CDATA" >
 
 <!ENTITY % hostname_types "(PTR)" >
 
 <!-- see output.c:output_xml_scaninfo_records for scan types -->
 <!ENTITY % scan_types "(syn|ack|bounce|connect|null|xmas|window|maimon|fin|udp|ipproto)" >
 
-<!ENTITY % ip_versions "(ipv4)" >
+<!-- <!ENTITY % ip_versions "(ipv4)" > -->
 
 <!ENTITY % port_protocols "(ip|tcp|udp)" >
 
 <!-- I don't know exactly what these are, but the values were enumerated via:
      grep "conf=" *
 -->
-<!ENTITY % service_confs  "( 3 | 5 )" >
-
-
-
+<!ENTITY % service_confs  "( 3 | 5 | 10)" >
 
 <!-- This element was started in nmap.c:nmap_main().
      It represents to the topmost element of the output document.
 -->
-<!ELEMENT nmaprun	(scaninfo, verbose, debugging, host*, runstats?) >
+<!ELEMENT nmaprun      (scaninfo?, verbose, debugging, host*, runstats?) >
 <!ATTLIST nmaprun
 			scanner		(nmap)		#REQUIRED
 			args		CDATA		#IMPLIED
 			start		%attr_numeric;	#IMPLIED
+			startstr	CDATA	        #IMPLIED
 			version		CDATA		#REQUIRED
-			xmloutputversion (1.0)		#REQUIRED
+			xmloutputversion (1.01)		#REQUIRED
 >
 
 <!-- this element is written in output.c:doscaninfo() -->
@@ -100,7 +95,6 @@
 			numservices	%attr_numeric;	#REQUIRED
 			services	CDATA		#REQUIRED
 >
-
 
 <!-- these elements are written in nmap.c:nmap_main() -->
 <!ELEMENT verbose	EMPTY >
@@ -115,7 +109,9 @@
      output.c:write_host_status(), output.c:printportoutput(), and
      output.c:printosscanoutput()
 -->
-<!ELEMENT host		( ( status | address )+ , ( hostnames | smurf | ports | os | uptime | tcpsequence | ipidsequence | tcptssequence )* ) >
+<!ELEMENT host		( status, address , (address | hostnames |
+                          smurf | ports | addport | os | uptime |
+                          tcpsequence | ipidsequence | tcptssequence )* ) >
 
 
 <!-- these elements are written by output.c:write_xml_initial_hostinfo() -->
@@ -125,7 +121,8 @@
 <!ELEMENT address	EMPTY >
 <!ATTLIST address
 			addr		%attr_ipaddr;	#REQUIRED
-			addrtype	%ip_versions;	"ipv4"
+			addrtype	%attr_type;	"ipv4"
+			vendor		CDATA		#IMPLIED
 >
 
 <!ELEMENT hostnames	(hostname)* >
@@ -136,10 +133,18 @@
 >
 
 
-<!-- this element are written by output.c:write_host_status() -->
+<!-- this element is written by output.c:write_host_status() -->
 <!ELEMENT smurf		EMPTY >
 <!ATTLIST smurf		responses	%attr_numeric;	#REQUIRED >
 
+<!-- this element is written by portlist.cc:addport() -->
+<!ELEMENT addport         EMPTY >
+<!ATTLIST addport
+                        state           %port_states;    #REQUIRED
+                        owner           CDATA            #IMPLIED
+                        portid          %attr_numeric;   #REQUIRED
+                        protocol        %port_protocols; #REQUIRED
+>
 
 
 <!-- these elements are written by output.c:printportoutput() -->
@@ -168,7 +173,10 @@
 <!ATTLIST service
 			name		CDATA		#REQUIRED
 			conf		%service_confs;	#REQUIRED
-			method		(table|detection) #REQUIRED
+                        method          (table|detection|probed) #REQUIRED
+                        version         CDATA           #IMPLIED
+                        product         CDATA           #IMPLIED
+                        extrainfo       CDATA           #IMPLIED
 			proto		(rpc)		#IMPLIED
 			rpcnum		%attr_numeric;	#IMPLIED
 			lowver		%attr_numeric;	#IMPLIED
@@ -178,7 +186,7 @@
 
 <!-- these elements are written by output.c: printosscanoutput() -->
 
-<!ELEMENT os		( portused* , osmatch? ) >
+<!ELEMENT os		( portused* , osclass*, osmatch* ) >
 
 <!ELEMENT portused	EMPTY >
 <!ATTLIST portused
@@ -186,6 +194,15 @@
 			proto 		%port_protocols; #REQUIRED
 			portid 		%attr_numeric;	#REQUIRED
 >
+<!ELEMENT osclass      EMPTY >
+<!ATTLIST osclass
+                       vendor          CDATA           #REQUIRED
+                       osgen           CDATA           #IMPLIED
+                       type            CDATA           #IMPLIED
+                       accuracy        CDATA           #REQUIRED
+                       osfamily        CDATA           #REQUIRED
+>
+
 
 <!ELEMENT osmatch	EMPTY >
 <!ATTLIST osmatch
@@ -223,7 +240,9 @@
 <!ELEMENT runstats	(finished, hosts) >
 
 <!ELEMENT finished	EMPTY >
-<!ATTLIST finished	time		%attr_numeric;	#REQUIRED >
+<!ATTLIST finished	time		%attr_numeric;	#REQUIRED
+                        timestr		CDATA	        #IMPLIED
+>
 
 <!ELEMENT hosts		EMPTY >
 <!ATTLIST hosts
@@ -232,3 +251,4 @@
 			skipped		%attr_numeric;	"0"
 			total		%attr_numeric;	#REQUIRED
 >
+

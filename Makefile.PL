@@ -3,11 +3,11 @@ use ExtUtils::MakeMaker;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 
-my %depends = (XML::Twig   => 3.11);
+my %depends = (XML::Twig   => 3.16);
 
 WriteMakefile(
-    ABSTRACT		=> 'Nmap parser for XML output scan data',
-    AUTHOR		=> 'Anthony G Persaud <ironstar@iastate.edu>',
+    ABSTRACT		=> 'Nmap output parser for scan data',
+    AUTHOR		=> 'Anthony G Persaud (ironstar@iastate.edu)',
     clean		=> {FILES => "*.tar *.old pod2htm*"},
    # EXE_FILES   	=> [ map {"examples/$_/$_"} @programs], #soon
     NAME		=> 'Nmap::Parser',

@@ -1,9 +1,21 @@
-Revision history for Perl extension Nmap::Parser::XML.
+Revision history for Perl extension Nmap::Parser.
 
 Latest version: http://sourceforge.net/projects/npx
 		http://search.cpan.org/~apersaud/Nmap-Parser/
 
-Website:        http://npx.sourceforge.net/
+Website:        http://www.nmapparser.com
+		http://npx.sourceforge.net
+
+Changes for 0.79
+	- fixed ports that were declared as 'open|filtered'
+	    these now are counted as both 'open' and 'filtered'
+	    when using tcp_ports() and udp_ports().
+	- sent a patch for XML::Twig in order to fix. It is now released in
+	    XML:Twig 3.16
+	- added start_str() and time_str() : they return the human readable format
+	of the scan start time and scan finish time (respectively).
+	- updated for Nmap 3.81
+	- documentation changes
 
 Changes for 0.78
 	- updated documentation - now included tcp/udp service product
@@ -224,7 +236,7 @@ Changes for 0.01
 
 COPYRIGHT AND LICENCE
 
-Copyright (C) 2004 Anthony G Persaud <ironstar@iastate.edu>
+Copyright (C) 2003-2005 Anthony G Persaud <ironstar@iastate.edu> <http://www.anthonypersaud.com>
 
  http://www.opensource.org/licenses/gpl-license.php
 

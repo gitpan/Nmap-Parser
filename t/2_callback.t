@@ -6,7 +6,7 @@ use strict;
 use blib;
 use File::Spec;
 use Cwd;
-use Test::More tests => 105;
+use Test::More tests => 110;
 use Nmap::Parser;
 no warnings;
 use constant FIRST =>  0;
@@ -18,7 +18,8 @@ use constant HOST3 => '127.0.0.3';
 use constant HOST4 => '127.0.0.4';
 use constant HOST5 => '127.0.0.5';
 use constant HOST6 => '127.0.0.6';
-
+use constant HOST7 => '127.0.0.7';
+my $total_addrs = 7;
 use constant TEST_FILE =>'nmap_results.xml';
 use vars qw($p $FH @up @down $total_count $host);
 
@@ -45,13 +46,14 @@ elsif($host->status eq 'down'){push @down, $addr;}
 
 if($host->addr() eq HOST1){nmap_parse_host_test_1();}
 elsif($host->addr() eq HOST6){nmap_parse_host_test_6();}
+else{isa_ok($host,'Nmap::Parser::Host');}
 
 }
 
 #TESTING CALLBACK OUTPUT
-ok(eq_set([@up], [HOST1,HOST2, HOST4, HOST5, HOST6]), 'Testing for correct up hosts');
+ok(eq_set([@up], [HOST1,HOST2, HOST4, HOST5, HOST6, HOST7]), 'Testing for correct up hosts');
 ok(eq_set([@down], [HOST3]), 'Testing for correct down hosts');
-is($total_count, 6, 'Testing for correct callback paramater passing');
+is($total_count, $total_addrs, 'Testing for correct callback paramater passing');
 
 #CHECKING FOR DELETION
 my $test = $p->get_host(HOST1);
@@ -64,6 +66,7 @@ is(scalar @hosts, 0 , 'Making sure objects were deleted after callback');
 ################################################################################
 ##									      ##
 ################################################################################
+
 sub nmap_parse_host_test_1 {
 print "\n\nTesting ".HOST1."\n";
 isa_ok($host = $p->get_host(HOST1),'Nmap::Parser::Host');

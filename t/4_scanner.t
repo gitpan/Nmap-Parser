@@ -6,7 +6,7 @@ use strict;
 use blib;
 use File::Spec;
 use Cwd;
-use Test::More tests => 1;
+use Test::More tests => 2;
 use constant IP => '127.0.0.1';
 use Nmap::Parser;
 no warnings;
@@ -15,7 +15,14 @@ $|=1;
 
 my $p = new Nmap::Parser;
 can_ok($p,'parsescan');
+my $nmap_path = find_nmap();
 
+SKIP:
+    {
+skip 'Nmap-Parser: Could not find nmap executable in path',1 if($nmap_path eq '');
+ok($nmap_path,"Exe Path: $nmap_path");
+#I will add more test later on
+}
 
 sub find_nmap {
 

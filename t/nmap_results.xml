@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <!-- nmap 3.27 scan initiated Tue Jul  1 14:48:03 2003 as: nmap -v -v -v -oX test.xml -O -sTUR -p 1-1023 localhost -->
-<nmaprun scanner="nmap" args="nmap -v -v -v -oX test.xml -O -sTUR -p 1-1023 localhost" start="1057088883" version="3.27" xmloutputversion="1.0">
+<nmaprun scanner="nmap" args="nmap -v -v -v -oX test.xml -O -sTUR -p 1-1023 localhost" start="1057088883" startstr="Tue Jul  1 14:48:03 2003" version="3.27" xmloutputversion="1.0">
 <scaninfo type="connect" protocol="tcp" numservices="1023" services="1-1023" />
 <scaninfo type="udp" protocol="udp" numservices="1023" services="1-1023" />
 <verbose level="3" />
@@ -158,6 +158,26 @@
 <ipidsequence class="Incremental" values="C4BE,C4C6,C4CC,C4CE,C4D4,C4DC"/>
 <tcptssequence class="none returned (unsupported)"/>
 </host>
-<runstats><finished time="1057088900" /><hosts up="1" down="0" total="1" />
+
+
+<host><status state="up" />
+<address addr="127.0.0.7" addrtype="ipv4" />
+<hostnames />
+<ports><extraports state="closed" count="1011" />
+<port protocol="tcp" portid="42"><state state="closed|filtered" /><service name="nameserver" method="table" conf="3" /></port>
+<port protocol="tcp" portid="123"><state state="closed|filtered" /><service name="ntp" method="table" conf="3" /></port>
+
+<port protocol="udp" portid="42"><state state="closed|filtered" /><service name="nameserver" method="table" conf="3" /></port>
+<port protocol="udp" portid="123"><state state="closed|filtered" /><service name="ntp" method="table" conf="3" /></port>
+
+<port protocol="tcp" portid="135"><state state="open|filtered" /><service name="msrpc" method="table" conf="3" /></port>
+<port protocol="tcp" portid="500"><state state="open|filtered" /><service name="microsoft-ds" method="table" conf="3" /></port>
+
+<port protocol="udp" portid="135"><state state="open|filtered" /><service name="kpasswd5" method="table" conf="3" /></port>
+<port protocol="udp" portid="500"><state state="open|filtered" /><service name="isakmp" method="table" conf="3" /></port>
+</ports>
+</host>
+
+<runstats><finished time="1057088900" timestr="Tue Jul  1 14:48:20 2003" /><hosts up="1" down="0" total="1" />
 <!-- Nmap run completed at Tue Jul  1 14:48:20 2003; 1 IP address (1 host up) scanned in 16.970 seconds -->
 </runstats></nmaprun>

@@ -1,4 +1,4 @@
-Nmap/Parser version 0.78
+Nmap/Parser version 0.79
 ============================
 
 nmap output parser in perl
@@ -6,6 +6,8 @@ nmap output parser in perl
 This perl module is here to ease the pain of developing scripts or collecting
 network information from nmap scans. Nmap::Parser does its task by parsing the
 information in the output of an nmap scan by using the xml-formatted output.
+An nmap parser for xml scan data using perl. Nmap Parser is a PERL module that
+makes developing security and audit tools using nmap and perl easier. 
 
 I am trying to balance efficiency with ease of use. If you think something
 can be done differently send your feedback.
@@ -14,11 +16,12 @@ INSTALLATION
 
 Latest version: http://sourceforge.net/projects/npx
 		http://search.cpan.org/~apersaud/Nmap-Parser/
-Website:        http://npx.sourceforge.net/
+Website:        http://www.nmapparser.com
+                http://npx.sourceforge.net
 
 Download the file and unpack. This is usually done by:
 
-   tar xvf Nmap-Parser-x.xx.tar.gz
+   tar zxvf Nmap-Parser-x.xx.tar.gz
 
 Where x.xx is the version number. Next change into the newly created directory.
 To install this module type the following:
@@ -32,7 +35,7 @@ DEPENDENCIES
 
 This module requires these other modules and libraries:
 
-	XML::Twig 3.09+
+	XML::Twig 3.16+
 
 In addition, you will need nmap 3.00+. You don't exactly need it, but this
 version of nmap supports the xml output that this module can parse. So, you do
@@ -41,21 +44,22 @@ not really need the executable, but the xml output that you will be parsing
 
 CHANGES
 
-Changes from 0.76 to 0.78
-	- added patches from Jeremy S.
-	- tcp_service and udp_service tunnel, accuracy, confidence
-	- os_accuracy method implemented
-	- added ident/owner information
-	- updated documentation - now included tcp/udp service product
-	- added new methods for new nmap command switch (-A)
-		mac_addr, mac_vendor, ipv4_addr
-	- verified xml format is still valid for nmap 3.55
+Changes from 0.78 to 0.79
+	- fixed ports that were declared as 'open|filtered'
+	    these now are counted as both 'open' and 'filtered'
+	    when using tcp_ports() and udp_ports().
+	- sent a patch for XML::Twig in order to fix. It is now released in
+	    XML:Twig 3.16
+	- added start_str() and time_str() : they return the human readable format
+	of the scan start time and scan finish time (respectively).
+	- updated for Nmap 3.81
+	- documentation changes
 
 FOR OTHER CHANGE INFORMATION SEE THE "CHANGES" FILE
 
 COPYRIGHT AND LICENCE
 
-Copyright (C) 2004 Anthony G Persaud <ironstar@iastate.edu>
+Copyright (C) 2003-2005 Anthony G Persaud <ironstar@iastate.edu> <http://www.anthonypersaud.com>
 
  http://www.opensource.org/licenses/gpl-license.php
 

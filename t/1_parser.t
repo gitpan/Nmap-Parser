@@ -5,7 +5,7 @@ use strict;
 use blib;
 use File::Spec;
 use Cwd;
-use Test::More tests => 213;
+use Test::More tests => 228;
 use Nmap::Parser;
 no warnings;
 use constant FIRST => 0;
@@ -17,7 +17,9 @@ use constant HOST3 => '127.0.0.3';
 use constant HOST4 => '127.0.0.4';
 use constant HOST5 => '127.0.0.5';
 use constant HOST6 => '127.0.0.6';
-use constant HOST7 => '192.168.0.6';
+use constant HOST7 => '127.0.0.7';
+
+
 
 
 
@@ -41,6 +43,7 @@ nmap_parse_host_test_3();
 nmap_parse_host_test_4();
 nmap_parse_host_test_5();
 nmap_parse_host_test_6();
+nmap_parse_host_test_7();
 nmap_parse_end_test();
 
 ################################################################################
@@ -49,9 +52,10 @@ nmap_parse_end_test();
 sub nmap_parse_test {ok($p->parsefile($FH),'Parsing from nmap data: $FH');}
 
 sub nmap_parse_end_test {
+print "\n\nMemory Clean Test:\n";
 ok($p->del_host(HOST2),'Testing del_host');
 ok(!$p->get_host(HOST2),'Testing for permanent deletion from call');
-is_deeply([$p->get_host_list('up')],[HOST1, HOST4, HOST5, HOST6],'Testing for permanent deletion from list');
+is_deeply([$p->get_host_list('up')],[HOST1, HOST4, HOST5, HOST6, HOST7],'Testing for permanent deletion from list');
 ok($p->clean(),'Testing clean() to clean memory');
 ok(!$p->get_scaninfo(),'Testing clean() against scaninfo');
 is(scalar $p->get_host_list(),undef,'Testing clean() against host list');
@@ -80,8 +84,8 @@ is_deeply($p->set_osfamily_list(\%test),\%test, 'Testing set_osfamily_list');
 is_deeply($p->get_osfamily_list(),\%test, 'Testing get_osfamily_list for premanence of structure');
 
 #GET HOST LIST
-is_deeply([$p->get_host_list()],[HOST1, HOST2, HOST3, HOST4, HOST5, HOST6], 'Testing get_host_list for correct hosts from file');
-is_deeply([$p->get_host_list('up')],[HOST1,HOST2, HOST4, HOST5, HOST6], 'Testing get_host_list for correct hosts with status = up');
+is_deeply([$p->get_host_list()],[HOST1, HOST2, HOST3, HOST4, HOST5, HOST6, HOST7], 'Testing get_host_list for correct hosts from file');
+is_deeply([$p->get_host_list('up')],[HOST1,HOST2, HOST4, HOST5, HOST6, HOST7], 'Testing get_host_list for correct hosts with status = up');
 is_deeply([$p->get_host_list('down')],[HOST3], 'Testing get_host_list for correct hosts for with status = down');
 
 #FILTER BY OSFAMILY
@@ -89,12 +93,12 @@ is_deeply([$p->filter_by_osfamily('solaris')],[HOST2, HOST6],'Testing single osf
 is_deeply([$p->filter_by_osfamily('solaris','linux')],[HOST1,HOST2,HOST6], 'Testing multiple osfamily filter');
 
 #FILTER BY STATUS
-is_deeply([$p->filter_by_status('up')],[HOST1,HOST2, HOST4, HOST5, HOST6],'Testing status filter - up');
+is_deeply([$p->filter_by_status('up')],[HOST1,HOST2, HOST4, HOST5, HOST6, HOST7],'Testing status filter - up');
 is_deeply([$p->filter_by_status('down')],[HOST3],'Testing status filter - down');
-is_deeply([$p->filter_by_status()],[HOST1,HOST2, HOST4, HOST5, HOST6],'Testing status filter - default');
+is_deeply([$p->filter_by_status()],[HOST1,HOST2, HOST4, HOST5, HOST6, HOST7],'Testing status filter - default');
 
 @test = sort {$a->addr() cmp $b->addr()} $p->get_host_objects();
-is(scalar @test, 6,'Testing for number of host objects');
+is(scalar @test, 7,'Testing for number of host objects');
 
 #ADDR TEST
 is($test[FIRST]->addr(), HOST1,'Testing for host object 1');
@@ -121,7 +125,11 @@ is($scaninfo->num_of_services('udp'),1023, 'Testing number of services for UDP')
 
 #SCAN TIME
 is($scaninfo->start_time(),1057088883,'Testing scaninfo start time');
+is($scaninfo->start_str(),"Tue Jul  1 14:48:03 2003",'Testing human readable start time');
+
 is($scaninfo->finish_time(),1057088900,'Testing scaninfo finish time');
+is($scaninfo->time_str(),"Tue Jul  1 14:48:20 2003",'Testing human readable finish time');
+
 
 #SCAN TYPES
 is(scalar $scaninfo->scan_types() ,2, 'Testing number of scan types');
@@ -456,6 +464,36 @@ is($host->os_class(),36,'Testing total count of os_class tags');
 is($host->os_family(),'solaris,switch','Testing os_family() = solaris,switch');
 
 }
+
+################################################################################
+##									      ##
+################################################################################
+sub nmap_parse_host_test_7 {
+    print "\n\nTesting ".HOST7."\n";
+isa_ok($host = $p->get_host(HOST7),'Nmap::Parser::Host');
+
+
+#testing udp ports considered 'open|filtered' - they should match both 'open' and 'filtered'
+#so when using 'filtered' any of 'closed|filtered' or 'open|filtered' will match it
+is_deeply([$host->tcp_ports('closed')],[qw(42 123)],'Testing tcp ports closed|filtered" with closed');
+is_deeply([$host->tcp_ports('filtered')],[qw(42 123 135 500)],'Testing tcp ports "closed|filtered" with filtered');
+
+is_deeply([$host->udp_ports('closed')],[qw(42 123)],'Testing udp ports "closed|filtered" with closed');
+is_deeply([$host->udp_ports('filtered')],[qw(42 123 135 500)],'Testing udp ports "closed|filtered" with filtered');
+
+is_deeply([$host->tcp_ports('open')],[qw(135 500)],'Testing tcp ports open|filtered" with open');
+is_deeply([$host->tcp_ports('filtered')],[qw(42 123 135 500)],'Testing tcp ports "open|filtered" with filtered');
+is_deeply([$host->udp_ports('open')],[qw(135 500)],'Testing udp ports "open|filtered" with open');
+is_deeply([$host->udp_ports('filtered')],[qw(42 123 135 500)],'Testing udp ports "open|filtered" with filtered');
+
+is_deeply([$host->tcp_ports('open|filtered')],[qw(135 500)],'Testing tcp ports open|filtered" with open|filtered');
+is_deeply([$host->tcp_ports('closed|filtered')],[qw(42 123)],'Testing tcp ports "closed|filtered" with closed|filtered');
+is_deeply([$host->udp_ports('open|filtered')],[qw(135 500)],'Testing udp ports "open|filtered" with open|filtered');
+is_deeply([$host->udp_ports('closed|filtered')],[qw(42 123)],'Testing udp ports "closed|filtered" with closed|filtered');
+
+
+}
+
 
 
 ################################################################################
