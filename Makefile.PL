@@ -6,7 +6,7 @@ use ExtUtils::MakeMaker;
 my %depends = (XML::Twig   => 3.09);
 
 WriteMakefile(
-    ABSTRACT		=> 'Nmap parser for xml output scan data',
+    ABSTRACT		=> 'Nmap parser for XML output scan data',
     AUTHOR		=> 'Anthony G Persaud <ironstar@iastate.edu>',
     clean		=> {FILES => "*.tar *.old pod2htm*"},
    # EXE_FILES   	=> [ map {"examples/$_/$_"} @programs], #soon

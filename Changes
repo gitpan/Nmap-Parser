@@ -1,18 +1,13 @@
-Revision history for Perl extension Nmap::Parser.
+Revision history for Perl extension Nmap::Parser::XML.
 
 Latest version: http://sourceforge.net/projects/npx
 		http://search.cpan.org/~apersaud/Nmap-Parser/
 
 Website:        http://npx.sourceforge.net/
 
-CHANGES
-
-IMPORTANT: If you wish to upgrade your old Nmap::Parser::XML scripts, just
-change the 'use' statement to call Nmap::Parser instead of Nmap::Parser::XML.
-
-Changes for 0.75
-	- new core module Nmap::Parser
-	- deprecated: Nmap::Parser::XML
+Changes for 0.76
+	- new module name: Nmap::Parser
+	- leagcy file still ok to use for now: Nmap::Parser::XML
 
 Changes for 0.74
 	- fixed ip address input bug

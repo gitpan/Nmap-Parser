@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #Anthony G. Persaud
-#port_info.pl
+#portinfo.pl
 #Description:
 #	It takes in a nmap xml file and outputs onto STDOUT and a file the
 #	all the ports that were scanned and found by nmap, their different
@@ -25,7 +25,7 @@
 use strict;
 use Nmap::Parser;
 use constant TEST_FILE => 'example.xml';
-use constant OUT_FILE => 'port_info_out.csv';
+use constant OUT_FILE => 'portinfo_out.csv';
 use File::Spec;
 use Pod::Usage;
 use Getopt::Long;
@@ -47,7 +47,7 @@ if($G{helpme} || (!$G{usefile} && scalar @ARGV == 0 && !$G{ipfile}))
 	{pod2usage(-exitstatus => 0, -verbose => 2);}
 
 print STDERR "FastScan enabled\n" if($G{verbose} > 0 && $G{fast});
-print "\nport_info.pl - ( http://npx.sourceforge.net )\n",
+print "\nportinfo.pl - ( http://npx.sourceforge.net )\n",
 	('-'x50),"\n\n";
 
 
@@ -223,11 +223,11 @@ __END__
 
 =head1 NAME
 
-port_info - quickly scans multiple hosts to determine port information
+portinfo - quickly scans multiple hosts to determine port information
 
 =head1 SYNOPSIS
 
- port_info.pl [OPTS] <IP_ADDR> [<IP.ADDR> ...]
+ portinfo.pl [OPTS] <IP_ADDR> [<IP.ADDR> ...]
 
 =head1 DESCRIPTION
 
@@ -297,12 +297,12 @@ Another interesting thing to do is slice the Internet the other way.
 
 Examples:
 
- port_info.pl 127.0.0.1
- port_info.pl target.example.com
- port_info.pl target.example.com/24
- port_info.pl 10.210.*.1-127
- port_info.pl *.*.2.3-5
- port_info.pl 10.[10-15].10.[2-254]
+ portinfo.pl 127.0.0.1
+ portinfo.pl target.example.com
+ portinfo.pl target.example.com/24
+ portinfo.pl 10.210.*.1-127
+ portinfo.pl *.*.2.3-5
+ portinfo.pl 10.[10-15].10.[2-254]
 
 =head1 OUTPUT EXAMPLE
 
@@ -320,7 +320,7 @@ conventions of:
   127.0.0.6,23,filtered,tcp,telnet,,,,solaris,switch
   127.0.0.6,80,open,tcp,http,,,,solaris,switch
 
-The default output filename is: port_info_out.csv
+The default output filename is: portinfo_out.csv
 
 =head1 BUG REPORTS
 

@@ -9,7 +9,7 @@ require 5.004;
 use XML::Twig;
 use vars qw($S %H %OS_LIST %F $DEBUG %R $NMAP_EXE);
 
-our $VERSION = '0.75';
+our $VERSION = '0.76';
 
 sub new {
 
@@ -143,9 +143,9 @@ my $args = shift; #get command for nmap scan
 my @ips = @_;
 
 my $FH;
-if($args =~ /-o(?:X|N|G)/){die "NPX: Cannot pass option '-oX', '-oN' or '-oG' to parscan()";}
+if($args =~ /-o(?:X|N|G)/){die "Nmap-Parser: Cannot pass option '-oX', '-oN' or '-oG' to parscan()";}
 my $cmd = "$nmap $args -v -v -v -oX - ".(join ' ',@ips);
-open $FH, "$cmd |" || die "NPX: Could not perform nmap scan: $!";
+open $FH, "$cmd |" || die "Nmap-Parser: Could not perform nmap scan: $!";
 $self->parse($FH);
 close $FH;
 return $self;
@@ -637,26 +637,26 @@ __END__
 
 =head1 NAME
 
-Nmap::Parser - nmap parser for xml scan data using perl.
+Nmap::Parser - Nmap parser for xml scan data
 
 =head1 SYNOPSIS
 
   use Nmap::Parser;
 
  	#PARSING
-  my $npx = new Nmap::Parser;
+  my $np = new Nmap::Parser;
 
   $nmap_exe = '/usr/bin/nmap';
-  $npx->parsescan($nmap_exe,'-sT -p1-1023', @ips);
+  $np->parsescan($nmap_exe,'-sT -p1-1023', @ips);
 
 
   #or
-  $npx->parsefile('nmap_output.xml') #using filenames
+  $np->parsefile('nmap_output.xml') #using filenames
 
  	#GETTING SCAN INFORMATION
 
   print "Scan Information:\n";
-  $si = $npx->get_scaninfo();
+  $si = $np->get_scaninfo();
   #Now I can get scan information by calling methods
   print
   'Number of services scanned: '.$si->num_of_services()."\n",
@@ -666,7 +666,7 @@ Nmap::Parser - nmap parser for xml scan data using perl.
  	#GETTING HOST INFORMATION
 
    print "Hosts scanned:\n";
-   for my $host_obj ($npx->get_host_objects()){
+   for my $host_obj ($np->get_host_objects()){
    print
   'Hostname  : '.$host_obj->hostname()."\n",
   'Address   : '.$host_obj->addr()."\n",
@@ -678,7 +678,7 @@ Nmap::Parser - nmap parser for xml scan data using perl.
   $p->clean(); #frees memory
   # ... do other stuff if you want ...
 
-I<Note:> You can either pass the $npx object a filehandle (piping nmap
+I<Note:> You can either pass the $np object a filehandle (piping nmap
 output using the nmap '-oX -' option, or you can pass it a filename. You can
 get the information the standard way using methods, or you can do it using
 callbacks (see more of the doc).
@@ -714,69 +714,69 @@ set also. (See Pre-Parse methods)
 Example, if you only want to retain the information of the hosts that nmap
 found to be up (active), then set the filter:
 
- $npx->parse_filters({only_active => 1});
+ $np->parse_filters({only_active => 1});
 
 Usually you won't have much information about hosts that are down from nmap
 anyways.
 
 =item I<Run the parser>
 
-Parse the info. You use $npx->parse() or $npx->parsefile(), to parse the nmap
+Parse the info. You use $np->parse() or $np->parsefile(), to parse the nmap
 xml information. This information is parsed and constructed internally.
 
 =item I<Get the Scan Info>
 
-Use the $si = $npx->get_scaninfo() to obtain the
+Use the $si = $np->get_scaninfo() to obtain the
 Nmap::Parser::ScanInfo object. Then you can call any of the
 ScanInfo methods on this object to retrieve the information. See
 Nmap::Parser::ScanInfo below.
 
 =item I<Get the Host Info>
 
-Use the $npx->get_host($addr) to obtain the Nmap::Parser::Host object of
+Use the $np->get_host($addr) to obtain the Nmap::Parser::Host object of
 the current address. Using this object you can call any methods in the
 Nmap::Parser::Host object to retrieve the information that nmap obtained
 from this scan.
 
- $npx->get_host($ip_addr);
+ $np->get_host($ip_addr);
 
 You can use any of the other methods to filter or obtain
 different lists.
 
  	#returns all ip addresses that were scanned
- $npx->get_host_list()
+ $np->get_host_list()
 
  	#returns all ip addresses that have osfamily = $os
- $npx->filter_by_osfamily($os)
+ $np->filter_by_osfamily($os)
 	 #See get_os_list() and set_os_list()
 	 #etc. (see other methods)
 
 	#returns all host objects from the information parsed.
 	#All are Nmap::Parser::Host objects
- $npx->get_host_objects()
+ $np->get_host_objects()
 
 
 =item I<Clean up>
 
 This is semi-optional. When files are not that long, this is optional.
 If you are in a situation with memory constraints and are dealing with large
-nmap xml-output files, this little effort helps. After you are done with everything, you should do a $npx->clean()
+nmap xml-output files, this little effort helps. After you are done with everything, you should do a $np->clean()
 to free up the memory used by maintaining the scan and hosts information
 from the scan. A much more efficient way to do is, once you are done using a
 host object, delete it.
 
  		#Getting all IP addresses parsed
- for my $host ($npx->get_host_list())
+ for my $host ($np->get_host_list())
  	{	#Getting the host object for that address
-	my $h = $npx->get_host($host);
+	my $h = $np->get_host($host);
 		#Calling methods on that object
 	print "Addr: $host  OS: ".$h->os_match()."\n";
-	$npx->del_host($host); #frees memory
+	$np->del_host($host); #frees memory
 	}
 
-	#Or when you are done with everything use $npx->clean()
-Or you could skip the $npx->del_host(), and after you are done, perform a
-$npx->clean() which resets all the internal trees. Of course there are much
+	#Or when you are done with everything use $np->clean()
+Or you could skip the $np->del_host(), and after you are done, perform a
+$np->clean() which resets all the internal trees. Of course there are much
 better ways to clean-up (using perl idioms).
 
 =back
@@ -791,9 +791,9 @@ better ways to clean-up (using perl idioms).
 
 Creates a new Nmap::Parser object with default handlers and default
 osfamily list. In this document the current Nmap::Parser object will be
-referred as B<$npx>.
+referred as B<$np>.
 
- my $npx = new Nmap::Parser; #NPX = Nmap Parser XML for those curious
+ my $np = new Nmap::Parser; #NPX = Nmap Parser XML for those curious
 
 =item B<set_osfamily_list($hashref)>
 
@@ -804,7 +804,7 @@ keyword list. Shown here is the default. Calling this method will overwrite the
 whole list, not append to it. Use C<get_osfamily_list()> first to get the current
 listing.
 
-  $npx->set_osfamily_list({
+  $np->set_osfamily_list({
 	linux 	=> [qw(linux mandrake redhat slackware)],
 	mac 	=> [qw(mac osx)],
 	solaris => [qw(solaris sparc sun)],
@@ -835,7 +835,7 @@ when parsing the xml information. All filter names passed will be treated
 as case-insensitive. I<NOTE: This version of the parser will ignore the 'addport'
 tag in the xml file. If you feel the need for this tag. Send your feedback>
 
- $npx->parse_filters({
+ $np->parse_filters({
  	osfamily 	=> 1, #same as any variation. Ex: osfaMiLy
  	only_active	=> 0,  #same here
  	portinfo	=> 1,
@@ -911,7 +911,7 @@ have to delete it yourself). This saves a lot of memory since after you perform
 the actions you wish to perform on the Nmap::Parser::Host object you
 currently have, it gets deleted from the tree.
 
- $npx->register_host_callback(\&host_handler);
+ $np->register_host_callback(\&host_handler);
 
  sub host_handler {
  my $host_obj = shift; #an instance of Nmap::Parser::Host (for current)
@@ -1065,7 +1065,7 @@ The scaninfo object. This package contains methods to easily access
 all the parameters and values of the Nmap scan information ran by the
 currently parsed xml file or filehandle.
 
- $si = $npx->get_scaninfo();
+ $si = $np->get_scaninfo();
  print 	'Nmap Version: '.$si->nmap_version()."\n",
  	'Num of Scan Types: '.(join ',', $si->scan_types() )."\n",
  	'Total time: '.($si->finish_time() - $si->start_time()).' seconds';
@@ -1374,19 +1374,19 @@ arguments for the nmap command line options passed to parsescan().
 
  use Nmap::Parser;
 
- my $npx = new Nmap::Parser;
+ my $np = new Nmap::Parser;
  #this is a simple example (no input checking done)
 
  my @hosts = @ARGV; #Get hosts from stdin
 
  #runs the nmap command with hosts and parses it at the same time
  #do not use -oX, -oN or -oG as one of your arguments. It is not allowed here.
- $npx->parsescan('nmap','-sS O -p 1-1023',@hosts);
+ $np->parsescan('nmap','-sS O -p 1-1023',@hosts);
 
  print "Active Hosts Scanned:\n";
- for my $ip ($npx->get_host_list('up')){print $ip."\n";}
+ for my $ip ($np->get_host_list('up')){print $ip."\n";}
 
- #... do more stuff with $npx ...
+ #... do more stuff with $np ...
 
  __END__
 
@@ -1402,13 +1402,13 @@ parser will delete all information of the host it had sent to the callback. This
 callback function is called for every host that the parser encounters.
 
  use Nmap::Parser;
- my $npx = new Nmap::Parser;
+ my $np = new Nmap::Parser;
 
  #NOTE: the callback function must be setup before parsing beings
- $npx->register_host_callback( \&my_function_here );
+ $np->register_host_callback( \&my_function_here );
 
  #parsing will begin
- $npx->parsefile('scanfile.xml');
+ $np->parsefile('scanfile.xml');
 
  sub my_function_here {
 	 #you will receive a Nmap::Parser::Host object for the current host
@@ -1464,13 +1464,5 @@ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
 A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
 L<http://www.opensource.org/licenses/gpl-license.php>
-
-=begin html
-
-<p>
-<a href="http://sourceforge.net/projects/npx"><img src="http://sourceforge.net/sflogo.php?group_id=97509&type=5" align='left' alt="SourceForge.net Logo" border="0" /></a>
-</p>
-
-=end html
 
 =cut
