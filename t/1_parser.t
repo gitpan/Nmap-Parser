@@ -5,7 +5,7 @@ use strict;
 use blib;
 use File::Spec;
 use Cwd;
-use Test::More tests => 204;
+use Test::More tests => 213;
 use Nmap::Parser;
 no warnings;
 use constant FIRST => 0;
@@ -17,7 +17,7 @@ use constant HOST3 => '127.0.0.3';
 use constant HOST4 => '127.0.0.4';
 use constant HOST5 => '127.0.0.5';
 use constant HOST6 => '127.0.0.6';
-
+use constant HOST7 => '192.168.0.6';
 
 
 
@@ -143,6 +143,9 @@ isa_ok($host = $p->get_host(HOST1),'Nmap::Parser::Host');
 is($host->status(), 'up', 'Testing if status = up');
 is($host->addr(), HOST1, 'Testing for correct address');
 is($host->addrtype(), 'ipv4', 'Testing for correct address type - ipv4');
+is($host->ipv4_addr(), HOST1, 'Testing to make sure IPv4 addr returned as default');
+is($host->mac_addr(), '00:09:5B:3F:7D:5E' , 'Testing to make sure MAC addr returned');
+is($host->mac_vendor(), 'Netgear' , 'Testing to make sure MAC vendor returned');
 
 #HOSTNAMES
 is($host->hostname(), 'localhost.localdomain','Testing basic hostname()');
@@ -229,6 +232,8 @@ isa_ok($host = $p->get_host(HOST2),'Nmap::Parser::Host');
 is($host->status(), 'up', 'Testing if status = up');
 is($host->addr(), HOST2, 'Testing for correct address');
 is($host->addrtype(), 'ipv4', 'Testing for correct address type - ipv4');
+is($host->mac_addr(), '03:F9:5B:1F:19:AE' , 'Testing to make sure MAC addr returned');
+is($host->mac_vendor(), 'Compaq' , 'Testing to make sure MAC vendor returned');
 
 #HOSTNAMES
 is($host->hostname(), 'LocalHost 2','Testing basic hostname()');
@@ -299,6 +304,7 @@ isa_ok($host = $p->get_host(HOST3),'Nmap::Parser::Host');
 is($host->status(), 'down', 'Testing if status = up');
 is($host->addr(), HOST3, 'Testing for correct address');
 is($host->addrtype(), 'ipv4', 'Testing for correct address type - ipv4');
+
 }
 
 ################################################################################
@@ -348,8 +354,8 @@ is($host->hostname(), 'host2', 'Testing hostname');
 is($host->extraports_state(),'filtered','Testing extraports_state');
 is($host->extraports_count(),1644,'Testing extraports_count');
 
-is_deeply([$host->tcp_ports()],[qw(21 22 25 80 112 113 953)],'Testing tcp ports found');
-is_deeply([$host->tcp_ports('open')],[qw(21 22 25 80 112 113 953)],'Testing tcp ports "open"');
+is_deeply([$host->tcp_ports()],[qw(21 22 25 26 80 112 113 953)],'Testing tcp ports found');
+is_deeply([$host->tcp_ports('open')],[qw(21 22 25 26 80 112 113 953)],'Testing tcp ports "open"');
 
 is($host->tcp_port_state(22),'open','Testing tcp state open');
 
@@ -364,7 +370,13 @@ is($host->tcp_service_owner(953),undef,'Testing service owner - no owner');
 is($host->tcp_service_owner(80),'www-data','Testing service owner - www-data');
 
 is($host->tcp_service_version(22),'3.4p1','Testing service version 22');
+is($host->tcp_service_version(25),'3.35','Testing service product 25');
+is($host->tcp_service_version(26),'3.6.1p1','Testing service product 26 - fake');
+
 is($host->tcp_service_product(22),'OpenSSH','Testing service product 22');
+is($host->tcp_service_product(25),'Exim smtpd','Testing service product 25');
+is($host->tcp_service_product(26),'OpenSSH','Testing service product 26 - fake');
+
 is($host->tcp_service_extrainfo(22),'protocol 1.99','Testing service info 22');
 
 is($host->tcp_service_version(112),2,'Testing tcp service version 112');

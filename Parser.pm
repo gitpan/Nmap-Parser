@@ -9,7 +9,7 @@ require 5.004;
 use XML::Twig;
 use vars qw($S %H %OS_LIST %F $DEBUG %R $NMAP_EXE $VERSION);
 
-$VERSION = '0.77';
+$VERSION = '0.78';
 
 sub new {
 
@@ -239,15 +239,14 @@ $host->{'att'}->{'time'};$twig->purge;}
 sub _host_hdlr {
 # handlers are always called with those 2 arguments
 my($twig, $host)= @_;
-my ($addr,$tmp);
+my ($addr,$tmp,$addr_hash);
     if(not defined($host)){return undef;}
     # get the element text
-    $tmp        = $host->first_child('address');
-    if(not defined $tmp){return undef;}
-    $addr = $tmp->{'att'}->{'addr'};
+    $addr_hash = _addr_hdlr($host);
+    $addr = $addr_hash->{'ipv4'}; #use ipv4 as identifier
+    $H{$addr}{addrs} = $addr_hash;
     if(!defined($addr) || $addr eq ''){return undef;}
-    $H{$addr}{addr} = $addr;
-    $H{$addr}{addrtype} = $tmp->{'att'}->{'addrtype'};
+
     $tmp = $host->first_child('hostnames');
     @{$H{$addr}{hostnames}} = _hostnames_hdlr($tmp,$addr)
     		if(defined ($tmp = $host->first_child('hostnames')));
@@ -279,6 +278,29 @@ my ($addr,$tmp);
     $twig->purge;
 
 }
+
+sub _addr_hdlr {
+my $host = shift;
+my %addr_hash = ();
+my @addrs = $host->children('address');
+
+	for my $addr (@addrs){
+		if(lc($addr->{'att'}->{'addrtype'}) eq 'mac')
+		{
+		#we'll assume for now, only 1 MAC address per system
+		$addr_hash{'mac'}{'addr'} = $addr->{'att'}->{'addr'};
+		$addr_hash{'mac'}{'vendor'} = $addr->{'att'}->{'vendor'};
+		}
+		elsif(lc($addr->{'att'}->{'addrtype'}) eq 'ipv4') {
+		$addr_hash{'ipv4'} = $addr->{'att'}->{'addr'};
+		}
+
+	}
+
+return \%addr_hash;
+
+}
+
 
 sub _port_hdlr {
 shift if(ref($_[0]) eq __PACKAGE__);
@@ -495,8 +517,12 @@ return $self;
 }
 
 sub status {return $_[0]->{status};}
-sub addr {return $_[0]->{addr};}
-sub addrtype {return $_[0]->{addrtype};}
+sub addr {return $_[0]->{addrs}{'ipv4'};}
+sub addrtype { return 'ipv4' if(defined $_[0]->{addrs}{'ipv4'} );}
+sub ipv4_addr {return $_[0]->{addrs}{'ipv4'};}
+sub mac_addr {return $_[0]->{addrs}{'mac'}{'addr'};}
+sub mac_vendor {return $_[0]->{addrs}{'mac'}{'vendor'};}
+
 #returns the first hostname
 sub hostname  { exists($_[0]->{hostnames}) ? return ${$_[0]->{hostnames}}[0] :
 					     return undef;   }
@@ -666,7 +692,7 @@ __END__
 
 =head1 NAME
 
-Nmap::Parser - Nmap parser for xml scan data
+Nmap::Parser - parse nmap scan data with perl
 
 =head1 SYNOPSIS
 
@@ -678,15 +704,15 @@ Nmap::Parser - Nmap parser for xml scan data
   $nmap_exe = '/usr/bin/nmap';
   $np->parsescan($nmap_exe,'-sT -p1-1023', @ips);
 
-
   #or
+
   $np->parsefile('nmap_output.xml') #using filenames
 
  	#GETTING SCAN INFORMATION
 
   print "Scan Information:\n";
   $si = $np->get_scaninfo();
-  #Now I can get scan information by calling methods
+  #get scan information by calling methods
   print
   'Number of services scanned: '.$si->num_of_services()."\n",
   'Start Time: '.$si->start_time()."\n",
@@ -698,33 +724,34 @@ Nmap::Parser - Nmap parser for xml scan data
    for my $host_obj ($np->get_host_objects()){
    print
   'Hostname  : '.$host_obj->hostname()."\n",
-  'Address   : '.$host_obj->addr()."\n",
+  'Address   : '.$host_obj->ipv4_addr()."\n",
   'OS match  : '.$host_obj->os_match()."\n",
   'Open Ports: '.(join ',',$host_obj->tcp_ports('open'))."\n";
   	#... you get the idea...
    }
 
-  $p->clean(); #frees memory
+  #frees memory - helpful when dealing with memory intensive scripts
+  $np->clean();
+
   # ... do other stuff if you want ...
 
-I<Note:> You can either pass the $np object a filehandle (piping nmap
-output using the nmap '-oX -' option, or you can pass it a filename. You can
-get the information the standard way using methods, or you can do it using
-callbacks (see more of the doc).
+I<Note: You can get the hosts the standard way - using get_host_objects(), or
+you can setup the script to use callback (recommended) methods for every host
+encountered. (see EXAMPLES for more information).>
 
 =head1 DESCRIPTION
 
-This is an stand-alone output parser for nmap XML reports. This uses the
-XML::Twig library which is fast and memory efficient. This module does not do a
-nmap scan (See Nmap::Scanner for that functionality). It either can parse a nmap
-xml file, or it can take a filehandle that is piped from a current nmap running
-scan using '-oX -' switch. This module was developed to speedup network security
-tool development when using nmap.
+This is an stand-alone output parser for nmap outputs. This uses the
+XML::Twig library which is fast and memory efficient. This module can perform an
+nmap scan and parse the output (automagically) using parsescan(). It can parse a
+nmap xml file, or it can take a filehandle that is piped from a current nmap running
+scan using '-oX -' switch (but you might as well use parsescan() ). This module
+was developed to speedup network security tool development when using nmap.
 
 This module is meant to be a balance of easy of use and efficiency. (more ease
 of use). I have added filtering capabilities and use various options on the twig
-library in order to incrase parsing speed and save on memory usage. If you need
-more information from an nmap xml-output that is not available in the release,
+library in order to incrase parsing speed and save memory usage. If you need
+more information from an nmap output that is not available in the release,
 please send your request. (see below).
 
 =head2 OVERVIEW
@@ -1164,7 +1191,26 @@ Returns the status of the host system. Either 'up' or 'down'
 
 =item B<addr()>
 
-Returns the IP address of the system
+Returns the IPv4 address of the system.
+
+=item B<ipv4_addr()>
+
+Explicitly returns the IPv4 address of the system
+
+=item B<mac_addr()>
+
+Explicitly returns the MAC (Media Access Control) address of the system.
+
+I<Note: This only shows up if you ran the nmap scan with the '-A' switch
+(present only in nmap 3.55+)>
+
+=item B<mac_vendor()>
+
+Returns the vendor of the MAC (Media Access Control) card of the system.
+Example: Netgear, Compaq ... etc.
+
+I<Note: This only shows up if you ran the nmap scan with the '-A' switch
+(present only in nmap 3.55+)>
 
 =item B<addrtype()>
 
@@ -1258,6 +1304,13 @@ given tcp/udp $port. (if any)
 
 Returns the owner information of the given $port number. Note that this is not
 available unless the nmap scan was run with the ident scanning option.
+
+=item B<tcp_service_product($port)>, B<udp_service_product($port)>
+
+Returns the product content of the service running on the
+given tcp/udp $port. (if any)
+
+I<NOTE> This attribute is only available in new versions of nmap (3.40+).
 
 =item B<tcp_service_proto($port)>, B<udp_service_proto($port)>
 
@@ -1490,12 +1543,13 @@ on sourceforge.net: L<http://sourceforge.net/projects/npx/>
 
 =head1 CONTRIBUTIONS
 
-Thank you to all who have contributed to the module (bug fixes or suggestions)
+Thank you to all who have contributed to the module (bug fixes or suggestions),
+and special thanks to the gurus below:
 
 Jeremy Stiffler
-Max Schubert
 Sebastian Wolfgarten
 Vince Stratful
+Oddbjorn Steffensen
 
 =head1 AUTHOR
 

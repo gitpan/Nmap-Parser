@@ -5,6 +5,12 @@ Latest version: http://sourceforge.net/projects/npx
 
 Website:        http://npx.sourceforge.net/
 
+Changes for 0.78
+	- updated documentation - now included tcp/udp service product
+	- added new methods for new nmap command switch (-A)
+		mac_addr, mac_vendor, ipv4_addr
+	- verified xml format is still valid for nmap 3.55
+
 Changes for 0.77
 	- updated documentation
 	- added patches from Jeremy S.

@@ -6,7 +6,7 @@ use strict;
 use blib;
 use File::Spec;
 use Cwd;
-use Test::More tests => 102;
+use Test::More tests => 105;
 use Nmap::Parser;
 no warnings;
 use constant FIRST =>  0;
@@ -72,6 +72,9 @@ isa_ok($host = $p->get_host(HOST1),'Nmap::Parser::Host');
 is($host->status(), 'up', 'Testing if status = up');
 is($host->addr(), HOST1, 'Testing for correct address');
 is($host->addrtype(), 'ipv4', 'Testing for correct address type - ipv4');
+is($host->ipv4_addr(), HOST1, 'Testing to make sure IPv4 addr returned as default');
+is($host->mac_addr(), '00:09:5B:3F:7D:5E' , 'Testing to make sure MAC addr returned');
+is($host->mac_vendor(), 'Netgear' , 'Testing to make sure MAC vendor returned');
 
 #HOSTNAMES
 is($host->hostname(), 'localhost.localdomain','Testing basic hostname()');
@@ -95,6 +98,7 @@ is_deeply([$host->tcp_ports('open')],[qw(80 111 443 631)],'Testing tcp ports "op
 is_deeply([$host->tcp_ports('filtered')],[qw(22 25)],'Testing tcp ports "filtered"');
 is_deeply([$host->udp_ports('open')],[qw(111)],'Testing udp ports "open"');
 is_deeply([$host->udp_ports('closed')],[qw(937)],'Testing udp ports "closed"');
+
 
 
 is($host->tcp_port_state('22'),'filtered','Testing tcp_ports(port_number) filtered');

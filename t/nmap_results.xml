@@ -33,6 +33,7 @@
 </port>
 <port protocol="udp" portid="937"><state state="closed" /></port>
 </ports>
+<address addr="00:09:5B:3F:7D:5E" vendor="Netgear" addrtype="mac" />
 <os><portused state="open" proto="tcp" portid="22" />
 <portused state="closed" proto="tcp" portid="1" />
 <osclass type="general purpose" vendor='Linux' osfamily='Linux' osgen='2.4.x' accuracy="100"/>
@@ -46,6 +47,7 @@
 </host>
 <host><status state="up" />
 <address addr="127.0.0.2" addrtype="ipv4" />
+<address addr="03:F9:5B:1F:19:AE" vendor="Compaq" addrtype="mac" />
 <hostnames><hostname name="LocalHost 2" type="PTR" /></hostnames>
 <addport state="open" portid="22" protocol="tcp" owner=""/>
 <addport state="open" portid="80" protocol="tcp" owner=""/>
@@ -87,6 +89,7 @@
 <port protocol="tcp" portid="21"><state state="open" /><owner name="root" /><service name="ftp" product="ProFTPD" version="1.2.5rc1" method="probed" conf="10" /></port>
 <port protocol="tcp" portid="22"><state state="open" /><owner name="root" /><service name="ssh" product="OpenSSH" version="3.4p1" extrainfo="protocol 1.99" method="probed" conf="10" /></port>
 <port protocol="tcp" portid="25"><state state="open" /><owner name="root" /><service name="smtp" product="Exim smtpd" version="3.35" method="probed" conf="10" /></port>
+<port protocol="tcp" portid="26"><state state="open" /><service name="ssh" product="OpenSSH" version="3.6.1p1" extrainfo="protocol 1.99" method="probed" conf="10" /></port>
 <port protocol="tcp" portid="80"><state state="open" /><owner name="www-data" /><service name="http" product="Apache httpd" version="1.3.26" extrainfo="(Unix) Debian GNU/Linux" method="probed" conf="10" /></port>
 <port protocol="tcp" portid="953"><state state="open" /><service name="rndc" method="table" conf="3" /></port>
 </ports>

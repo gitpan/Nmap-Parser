@@ -16,7 +16,7 @@ use constant HOST4 => '127.0.0.4';
 use constant HOST5 => '127.0.0.5';
 use constant HOST6 => '127.0.0.6';
 use vars qw($t1 $t2);
-use constant COUNT =>3 ;
+use constant COUNT =>10 ;
 $|=1;
 
 eval {require Time::HiRes;};

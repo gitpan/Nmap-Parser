@@ -4,7 +4,7 @@ use strict;
 use blib;
 use File::Spec;
 use Cwd;
-use Test::More tests => 81;
+use Test::More tests => 84;
 use vars qw($host $p $FH $scaninfo @test %test $test);
 use_ok('Nmap::Parser');
 no warnings;
@@ -25,6 +25,9 @@ xml_version
 
 my @Host = qw(
 addr
+ipv4_addr
+mac_addr
+mac_vendor
 addrtype
 extraports_count
 extraports_state
