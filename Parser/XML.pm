@@ -5,12 +5,10 @@ package Nmap::Parser::XML;
 ################################################################################
 
 use strict;
-require 5.004;
 use XML::Twig;
 use Nmap::Parser;
-
-use vars qw(@ISA);
-our $VERSION = '0.75';
+use vars qw(@ISA $VERSION);
+$VERSION = '0.75';
 @ISA = qw(Nmap::Parser);
 
 sub new {

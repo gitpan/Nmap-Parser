@@ -7,9 +7,9 @@ package Nmap::Parser;
 use strict;
 require 5.004;
 use XML::Twig;
-use vars qw($S %H %OS_LIST %F $DEBUG %R $NMAP_EXE);
+use vars qw($S %H %OS_LIST %F $DEBUG %R $NMAP_EXE $VERSION);
 
-our $VERSION = '0.76';
+$VERSION = '0.77';
 
 sub new {
 
@@ -303,6 +303,10 @@ if(defined($proto && $portid)){$H{$addr}{ports}{$proto}{$portid} = _service_hdlr
 my $state = $p->first_child('state');
 if(defined($state) && $state ne '')
 {$H{$addr}{ports}{$proto}{$portid}{'state'} = $state->{'att'}->{'state'} || 'closed';}
+#Added owner information (ident)
+my $owner = $p->first_child('owner');
+if(defined($owner) && $owner ne '')
+{$H{$addr}{ports}{$proto}{$portid}{'owner'} = $owner->{'att'}->{'name'} || '';}
 
 }
 
@@ -325,6 +329,9 @@ $tmp->{service_product} = $s->{'att'}->{'product'};
 $tmp->{service_extrainfo} = $s->{'att'}->{'extrainfo'};
 $tmp->{service_proto} = $s->{'att'}->{'proto'};
 $tmp->{service_rpcnum} = $s->{'att'}->{'rpcnum'};
+$tmp->{service_tunnel} = $s->{'att'}->{'tunnel'};
+$tmp->{service_method} = $s->{'att'}->{'method'};
+$tmp->{service_confidence} = $s->{'att'}->{'conf'};
 }
 
 return $tmp;
@@ -349,7 +356,7 @@ if(defined(my $os_list = $host->first_child('os'))){
 
     @list = ();
     for my $o ($os_list->children('osclass'))
-    {push @list, [$o->{'att'}->{'osfamily'},$o->{'att'}->{'osgen'},$o->{'att'}->{'vendor'},$o->{'att'}->{'type'}];}
+    {push @list, [$o->{'att'}->{'osfamily'},$o->{'att'}->{'osgen'},$o->{'att'}->{'vendor'},$o->{'att'}->{'type'},$o->{'att'}->{'accuracy'}];}
     @{$H{$addr}{os}{osclass}} = @list;
 
     }
@@ -433,7 +440,7 @@ return 'other';
 
 
 ################################################################################
-##			Nmap::Parser::ScanInfo			      ##
+##			Nmap::Parser::ScanInfo			              ##
 ################################################################################
 
 package Nmap::Parser::ScanInfo;
@@ -473,9 +480,11 @@ use constant OSFAMILY 		=> 0;
 use constant OSGEN		=> 1;
 use constant OSVENDOR		=> 2;
 use constant OSTYPE		=> 3;
+use constant OSACCURACY		=> 4;
 use constant CLASS		=> 0;
 use constant VALUES		=> 1;
 use constant INDEX		=> 2;
+
 
 sub new {
 my ($class,$self) = (shift);
@@ -557,6 +566,9 @@ sub udp_service_proto {$_[1] ne '' ?  $_[0]->{ports}{udp}{$_[1]}{service_proto} 
 sub tcp_service_rpcnum {$_[1] ne '' ?  $_[0]->{ports}{tcp}{$_[1]}{service_rpcnum} :  undef;}
 sub udp_service_rpcnum {$_[1] ne '' ?  $_[0]->{ports}{udp}{$_[1]}{service_rpcnum} :  undef;}
 
+sub tcp_service_owner {$_[1] ne '' ?  $_[0]->{ports}{tcp}{$_[1]}{owner} :  undef;}
+sub udp_service_owner {$_[1] ne '' ?  $_[0]->{ports}{udp}{$_[1]}{owner} :  undef;}
+
 sub tcp_service_version {$_[1] ne '' ?  $_[0]->{ports}{tcp}{$_[1]}{service_version} :  undef;}
 sub udp_service_version {$_[1] ne '' ?  $_[0]->{ports}{udp}{$_[1]}{service_version} :  undef;}
 
@@ -565,6 +577,16 @@ sub udp_service_product {$_[1] ne '' ?  $_[0]->{ports}{udp}{$_[1]}{service_produ
 
 sub tcp_service_extrainfo {$_[1] ne '' ?  $_[0]->{ports}{tcp}{$_[1]}{service_extrainfo} :  undef;}
 sub udp_service_extrainfo {$_[1] ne '' ?  $_[0]->{ports}{udp}{$_[1]}{service_extrainfo} :  undef;}
+
+sub tcp_service_tunnel {$_[1] ne '' ?  $_[0]->{ports}{tcp}{$_[1]}{service_tunnel} :  undef;}
+sub udp_service_tunnel {$_[1] ne '' ?  $_[0]->{ports}{udp}{$_[1]}{service_tunnel} :  undef;}
+
+sub tcp_service_method {$_[1] ne '' ?  $_[0]->{ports}{tcp}{$_[1]}{service_method} :  undef;}
+sub udp_service_method {$_[1] ne '' ?  $_[0]->{ports}{udp}{$_[1]}{service_method} :  undef;}
+
+sub tcp_service_confidence {$_[1] ne '' ?  $_[0]->{ports}{tcp}{$_[1]}{service_confidence} :  undef;}
+sub udp_service_confidence {$_[1] ne '' ?  $_[0]->{ports}{udp}{$_[1]}{service_confidence} :  undef;}
+
 
 sub os_match {ref($_[0]->{os}{names}) eq 'ARRAY' ? ${$_[0]->{os}{names}}[0] : undef;}
 sub os_matches {
@@ -611,6 +633,13 @@ return if(ref($_[0]->{os}{osclass}) ne 'ARRAY');
 if($_[1] > 0){return ${$_[0]->{os}{osclass}}[ $_[1] - 1 ][OSTYPE]}
 else {return ${$_[0]->{os}{osclass}}[0][OSTYPE] }
 	}
+
+sub os_accuracy {
+return if(ref($_[0]->{os}{osclass}) ne 'ARRAY');
+if($_[1] > 0){return ${$_[0]->{os}{osclass}}[ $_[1] - 1 ][OSACCURACY]}
+else{return ${$_[0]->{os}{osclass}}[0][OSACCURACY] }
+	}
+
 
 sub tcpsequence {return @{$_[0]->{tcpsequence}}    if(ref($_[0]->{tcpsequence}) eq 'ARRAY');}
 sub tcpsequence_class {(ref($_[0]->{tcpsequence}) eq 'ARRAY') ? ${$_[0]->{tcpsequence}}[CLASS] :  undef;}
@@ -1205,6 +1234,10 @@ more efficient) to:
 
 Returns the state of the given tcp/udp port.
 
+=item B<tcp_service_confidence($port)>, B<udp_service_confidence($port)>
+
+Returns the confidence level of the accuracy of port/service information.
+
 =item B<tcp_service_extrainfo($port)>, B<udp_service_extrainfo($port)>
 
 Returns any extra information about the running service. This information is
@@ -1212,17 +1245,19 @@ usually available when the scan performed was version scan (-sV).
 
 I<NOTE> This attribute is only available in new versions of nmap (3.40+).
 
+=item B<tcp_service_method($port)>, B<udp_service_method($port)>
+
+Returns the method information of the given service on the specificed $port number.
+
 =item B<tcp_service_name($port)>, B<udp_service_name($port)>
 
 Returns the name of the service running on the
 given tcp/udp $port. (if any)
 
-=item B<tcp_service_extrainfo($port)>, B<udp_service_extrainfo($port)>
+=item B<tcp_service_owner($port)>, B<udp_service_owner($port)>
 
-Returns the service product information from the nmap service information. This
-information is available when the scan performed was version scan (-sV).
-
-I<NOTE> This attribute is only available in new versions of nmap (3.40+).
+Returns the owner information of the given $port number. Note that this is not
+available unless the nmap scan was run with the ident scanning option.
 
 =item B<tcp_service_proto($port)>, B<udp_service_proto($port)>
 
@@ -1233,6 +1268,10 @@ given by nmap.
 
 Returns the rpc number of the service on the given port. I<This value only
 exists if the protocol on the given port was found to be RPC by nmap.>
+
+=item B<tcp_service_tunnel($port)>, B<udp_service_tunnel($port)>
+
+Returns the tunnel information of the given service on the specificed $port number.
 
 =item B<tcp_service_version($port)>, B<udp_service_version($port)>
 
@@ -1264,6 +1303,11 @@ Returns the port number that was used in determining the OS of the system.
 If $state is set to 'open', then the port id that was used in state open is
 returned. If $state is set to 'closed', then the port id that was used in state
 closed is returned. (no kidding...). Default, the open port number is returned.
+
+=item B<os_accuracy([$number])>
+
+Returns the accuracy of OS detection for the given machine. The index starts at
+1.
 
 =item B<os_family()>
 
@@ -1331,7 +1375,7 @@ Returns the tcpsequence class information.
 
 Returns the tcpsequence values information.
 
-=item B<tcpsequence_values()>
+=item B<tcpsequence_index()>
 
 Returns the tcpsequence index information.
 
@@ -1430,6 +1474,11 @@ callback function is called for every host that the parser encounters.
 Please submit any bugs to:
 L<http://sourceforge.net/tracker/?group_id=97509&atid=618345>
 
+=head1 PATCHES AND FEATURE REQUESTS
+
+Please submit any requests to:
+L<http://sourceforge.net/tracker/?atid=618348&group_id=97509&func=browse>
+
 =head1 SEE ALSO
 
  nmap, L<XML::Twig>
@@ -1439,14 +1488,14 @@ It contains the latest developments on the module. The nmap security scanner
 homepage can be found at: L<http://www.insecure.org/nmap/>. This project is also
 on sourceforge.net: L<http://sourceforge.net/projects/npx/>
 
-=head1 ACKNOWLEDGEMENTS
+=head1 CONTRIBUTIONS
 
-Thanks to everyone who have provided feedback to improve and enhance this
-module.
+Thank you to all who have contributed to the module (bug fixes or suggestions)
 
-Special Thanks to:
-
-Max Schubert, Sebastian Wolfgarten
+Jeremy Stiffler
+Max Schubert
+Sebastian Wolfgarten
+Vince Stratful
 
 =head1 AUTHOR
 

@@ -5,9 +5,20 @@ Latest version: http://sourceforge.net/projects/npx
 
 Website:        http://npx.sourceforge.net/
 
+Changes for 0.77
+	- updated documentation
+	- added patches from Jeremy S.
+	- tcp_service and udp_service tunnel, accuracy, confidence
+	- os_accuracy method implemented
+	- added ident/owner information
+
 Changes for 0.76
 	- new module name: Nmap::Parser
 	- leagcy file still ok to use for now: Nmap::Parser::XML
+	- fixed problem using 'our' with older versions of perl
+	- updated requirement for oldest usable version of XML::Twig => 3.11
+	- you can extract owner information from running -I scanning
+		tcp_service_owner and udp_service_owner
 
 Changes for 0.74
 	- fixed ip address input bug

@@ -5,7 +5,7 @@ use strict;
 use blib;
 use File::Spec;
 use Cwd;
-use Test::More tests => 200;
+use Test::More tests => 204;
 use Nmap::Parser;
 no warnings;
 use constant FIRST => 0;
@@ -193,8 +193,8 @@ is($host->os_match, 'Linux Kernel 2.4.0 - 2.5.20','Testing os_match');
 is($host->os_matches(1), 'Linux Kernel 2.4.0 - 2.5.20','Testing os_matches(1)');
 
 #OS CLASS
-is_deeply([$host->os_class(1)],['Linux','2.4.x','Linux','general purpose'],'Testing os_class() with arg 1');
-is_deeply([$host->os_class(2)],['Solaris','8','Sun','general purpose'],'Testing os_class() with 2');
+is_deeply([$host->os_class(1)],['Linux','2.4.x','Linux','general purpose','100'],'Testing os_class() with arg 1');
+is_deeply([$host->os_class(2)],['Solaris','8','Sun','general purpose','100'],'Testing os_class() with 2');
 is($host->os_class(),2,'Testing total count of os_class tags');
 
 #OSFAMILY
@@ -270,7 +270,7 @@ is(scalar $host->os_matches(),1,'Testing for correct OS');
 is($host->os_matches(1), 'Sun Solaris 8 early access beta through actual release','Testing for correct OS');
 
 #OS CLASS
-is_deeply([$host->os_class(1) ],['Solaris','8','Sun','general purpose'],'Testing os_class() with no args');
+is_deeply([$host->os_class(1) ],['Solaris','8','Sun','general purpose','100'],'Testing os_class() with no args');
 is($host->os_class(),1,'Testing total count of os_class tags');
 
 #OSFAMILY
@@ -348,8 +348,8 @@ is($host->hostname(), 'host2', 'Testing hostname');
 is($host->extraports_state(),'filtered','Testing extraports_state');
 is($host->extraports_count(),1644,'Testing extraports_count');
 
-is_deeply([$host->tcp_ports()],[qw(22 112 953)],'Testing tcp ports found');
-is_deeply([$host->tcp_ports('open')],[qw(22 112 953)],'Testing tcp ports "open"');
+is_deeply([$host->tcp_ports()],[qw(21 22 25 80 112 113 953)],'Testing tcp ports found');
+is_deeply([$host->tcp_ports('open')],[qw(21 22 25 80 112 113 953)],'Testing tcp ports "open"');
 
 is($host->tcp_port_state(22),'open','Testing tcp state open');
 
@@ -357,7 +357,13 @@ is($host->tcp_service_name(22),'ssh','Testing service name ssh');
 is($host->tcp_service_name(112),'rpcbind','Testing service name rpcbind');
 is($host->tcp_service_name(953),'rndc','Testing service name rndc');
 
-is($host->tcp_service_version(22),'3.1p1','Testing service version 22');
+#Testing owner information
+is($host->tcp_service_owner(22),'root','Testing service owner ssh - root');
+is($host->tcp_service_owner(113),'identd','Testing service owner - identd');
+is($host->tcp_service_owner(953),undef,'Testing service owner - no owner');
+is($host->tcp_service_owner(80),'www-data','Testing service owner - www-data');
+
+is($host->tcp_service_version(22),'3.4p1','Testing service version 22');
 is($host->tcp_service_product(22),'OpenSSH','Testing service product 22');
 is($host->tcp_service_extrainfo(22),'protocol 1.99','Testing service info 22');
 
@@ -413,8 +419,8 @@ is($host->os_matches(9), 'Cisco 11151/Arrowpoint 150 load balancer, Neoware (was
 
 
 #OS CLASS
-is_deeply([$host->os_class(1) ],['AOS','','Redback','router'],'Testing os_class(1)');
-is_deeply([$host->os_class(15)],['embedded','','3Com','WAP'],'Testing os_class(15)');
+is_deeply([$host->os_class(1) ],['AOS','','Redback','router','97'],'Testing os_class(1)');
+is_deeply([$host->os_class(15)],['embedded','','3Com','WAP','88'],'Testing os_class(15)');
 
 is($host->os_osfamily(1),'AOS','Testing os_osfamily');
 is($host->os_vendor(1),'Redback','Testing os_vendor');

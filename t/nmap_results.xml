@@ -82,15 +82,13 @@
 <address addr="127.0.0.5" addrtype="ipv4" />
 <hostnames><hostname name="host2" type="PTR" /></hostnames>
 <ports><extraports state="filtered" count="1644" />
-<port protocol="tcp" portid="22"><state state="open" />
-	<service name="ssh" product="OpenSSH" version="3.1p1" extrainfo="protocol 1.99" method="probed" conf="10" /></port>
-
-<port protocol="tcp" portid="112"><state state="open" />
-	<service name="rpcbind" version="2" method="probed" conf="10" /></port>
-
-<port protocol="tcp" portid="953"><state state="open" />
-	<service name="rndc" method="table" conf="3" /></port>
-
+<port protocol="tcp" portid="112"><state state="open" /><service name="rpcbind" version="2" method="probed" conf="10" /></port>
+<port protocol="tcp" portid="113"><state state="open" /><owner name="identd" /><service name="ident" product="OpenBSD identd" method="probed" conf="10" /></port>
+<port protocol="tcp" portid="21"><state state="open" /><owner name="root" /><service name="ftp" product="ProFTPD" version="1.2.5rc1" method="probed" conf="10" /></port>
+<port protocol="tcp" portid="22"><state state="open" /><owner name="root" /><service name="ssh" product="OpenSSH" version="3.4p1" extrainfo="protocol 1.99" method="probed" conf="10" /></port>
+<port protocol="tcp" portid="25"><state state="open" /><owner name="root" /><service name="smtp" product="Exim smtpd" version="3.35" method="probed" conf="10" /></port>
+<port protocol="tcp" portid="80"><state state="open" /><owner name="www-data" /><service name="http" product="Apache httpd" version="1.3.26" extrainfo="(Unix) Debian GNU/Linux" method="probed" conf="10" /></port>
+<port protocol="tcp" portid="953"><state state="open" /><service name="rndc" method="table" conf="3" /></port>
 </ports>
 </host>
 <host><status state="up" />

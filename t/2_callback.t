@@ -121,8 +121,8 @@ is($host->os_match, 'Linux Kernel 2.4.0 - 2.5.20','Testing os_match');
 is($host->os_matches(1), 'Linux Kernel 2.4.0 - 2.5.20','Testing os_matches(1)');
 
 #OS CLASS
-is_deeply([$host->os_class(1)],['Linux','2.4.x','Linux','general purpose'],'Testing os_class() with arg 1');
-is_deeply([$host->os_class(2)],['Solaris','8','Sun','general purpose'],'Testing os_class() with 2');
+is_deeply([$host->os_class(1)],['Linux','2.4.x','Linux','general purpose','100'],'Testing os_class() with arg 1');
+is_deeply([$host->os_class(2)],['Solaris','8','Sun','general purpose','100'],'Testing os_class() with 2');
 is($host->os_class(),2,'Testing total count of os_class tags');
 
 #OSFAMILY
@@ -195,8 +195,8 @@ is($host->os_matches(9), 'Cisco 11151/Arrowpoint 150 load balancer, Neoware (was
 
 
 #OS CLASS
-is_deeply([$host->os_class(1) ],['AOS','','Redback','router'],'Testing os_class(1)');
-is_deeply([$host->os_class(15)],['embedded','','3Com','WAP'],'Testing os_class(15)');
+is_deeply([$host->os_class(1) ],['AOS','','Redback','router','97'],'Testing os_class(1)');
+is_deeply([$host->os_class(15)],['embedded','','3Com','WAP','88'],'Testing os_class(15)');
 
 is($host->os_osfamily(1),'AOS','Testing os_osfamily');
 is($host->os_vendor(1),'Redback','Testing os_vendor');

@@ -1,11 +1,11 @@
 # http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         Nmap-Parser
-version:      0.76
+version:      0.77
 version_from: Parser.pm
 installdirs:  site
 requires:
-    XML::Twig:                     3.09
+    XML::Twig:                     3.11
 
 distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.16
+generated_by: ExtUtils::MakeMaker version 6.17

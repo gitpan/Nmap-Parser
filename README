@@ -1,4 +1,4 @@
-Nmap/Parser version 0.76
+Nmap/Parser version 0.77
 ============================
 
 nmap output parser in perl
@@ -46,8 +46,10 @@ not really need the executable, but the xml output that you will be parsing
 CHANGES
 
 Changes from 0.74 to 0.76
-	- module is now Nmap::Parser
-	- legacy still included Nmap::Parser::XML
+	- new module name: Nmap::Parser
+	- leagcy file still ok to use for now: Nmap::Parser::XML
+	- fixed problem using 'our' with older versions of perl
+	- updated requirement for oldest usable version of XML::Twig => 3.11
 
 FOR OTHER CHANGE INFORMATION SEE THE "CHANGES" FILE
 

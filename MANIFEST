@@ -2,6 +2,7 @@ Changes
 LICENSE
 Makefile.PL
 MANIFEST			This list of files
+META.yml
 Parser.pm			New version of the parser
 Parser/XML.pm			Legacy parser (old parser)
 README
@@ -11,11 +12,10 @@ t/2_callback.t
 t/3_efficiency.t
 t/4_scanner.t
 t/nmap_results.xml
-tools/example.xml 	Example xml file used by example scripts
-tools/nmap.dtd    	Old standard for nmap xml
-tools/nmap2csv.pl 	helps import information to spreadsheet program
+tools/example.xml		Example xml file used by example scripts
+tools/nmap.dtd			Old standard for nmap xml
+tools/nmap2csv.pl		helps import information to spreadsheet program
 tools/nmap_std.xml
-tools/portinfo.pl	Takes port info to a CSV file
-tools/scanhost.pl 	Scans a set of hosts and retrieves information
-tools/sweep.pl    	Checks the status of hosts
-META.yml                                Module meta-data (added by MakeMaker)
+tools/portinfo.pl		Takes port info to a CSV file
+tools/scanhost.pl		Scans a set of hosts and retrieves information
+tools/sweep.pl			Checks the status of hosts
