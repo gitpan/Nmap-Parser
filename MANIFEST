@@ -1,0 +1,21 @@
+Changes				Information about the changes
+examples/example.xml		Example xml file used by example scripts
+examples/nmap.dtd		Old standard for nmap xml
+examples/nmap2csv.pl		helps import information to spreadsheet program
+examples/nmap_std.xml
+examples/port_info.pl		Takes port info to a CSV file
+examples/scanhost.pl		Scans a set of hosts and retrieves information
+examples/sweep.pl		Checks the status of hosts
+Parser/XML.pm			The old parsing module (replaced by Parser.pm)
+Parser.pm			The new core parsing module Nmap::Parser
+LICENSE				GPL
+Makefile.PL
+MANIFEST			This list of files
+META.yml
+README				Installation and notes
+t/0_api.t			Tests the API
+t/1_parser.t			Tests the parser
+t/2_callback.t			Test the callback methods
+t/3_efficiency.t		Test the efficiency of the parser with filters
+t/4_scanner.t			Test the running nmap scan functionality
+t/nmap_results.xml		Test file (large)

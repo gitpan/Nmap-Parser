@@ -1,0 +1,66 @@
+<?xml version="1.0" ?>
+<!-- nmap (V. 2.54BETA3) scan initiated Tue Aug 15 21:49:21 2000 as: nmap -sT -I -sR -O -p- -oM /tmp/smploutput.mlog localhost db -->
+<nmaprun args="-sT -I -sR -O -p- -oM /tmp/smploutput.mlog localhost db" start="966401074" version="2.54BETA3">
+</scaninfo type="connect" protocol="tcp" services="1-1024,1100,1400">
+</scaninfo type="udp" protocol="udp" services="1-1024,1100,1400">
+</scaninfo type="ipproto" protocol="ip" services="1-255">
+</verbose level="1">
+</debugging level="0">
+
+
+<host status="up">
+</address addr="192.168.0.24" addrtype="ipv4">
+</address addr="00:C0:F0:48:3A:54" addrtype="mac">
+</hostname name="amy.insecure.org" type="A">
+</hostname name="mail.insecure.org" type="CNAME">
+</hostname name="hopelessly.insecure.org" type="CNAME">
+<os></osmatch name="Linux 2.1.122 - 2.2.16" accuracy="100%">
+    </osmatch name="FreeBSD 4.0-Release" accuracy="100%">
+    </osmatch name="Linux 2.1.84 - 2.1.121" accuracy="96%">
+    </portused state="open" proto="tcp" id="22"> <!-- # OS detection is based on ports it can find to test against -->
+    </portused state="closed" proto="tcp" id="1">
+</os>
+</tcpsequence index="2796433" class="random positive increments" difficulty="Worthy Challenge">
+<port protocol="TCP" id="22" owner="root">
+   </state state="open" conf="5">
+   <!-- # Conf describes the confidence that the state is correct: 5 might mean "sure" while 2 could be a guess -->
+   </service name="ssh" conf="3" method="table"> <!-- # Obtained via lookup from nmap-services (see "method"); confidence is 1-5-->
+   </service name="xlm4" conf="3" method="table"> <!-- # In case there are more than one service listed as using that port -->
+   <banner>SSH-1.99-2.0.13 (non-commercial)</banner>
+</port>
+<port protocol="TCP" id="80" owner="nobody">
+   </state state="open" conf="5">
+   </service name="http" proto="http" conf="5" method="detection" version="Apache/1.3.12 (Unix) mod_perl/1.24">
+</port>
+<port protocol="TCP" id="32773" owner="root">
+   </state state="open" conf="5">
+   </service name="ttdbserverd" proto="rpc" version="1-2" conf="5" method="detection"> <!-- # RPCgrind also counts as a "detection" method -->
+</port>
+<port protocol="UDP" id="31337">
+   </state state="filtered" conf="5"><filteredby></packet proto="ICMP" type="3" code="3" name="ICMP port unreachable" srcipaddr="10.3.7.4" ip_v="4"></filteredby>
+   </service name="backorifice" conf="3" method="table">
+</port>
+<traceroute type="udp" port="41702">
+  <hop distance="0">  </hop>
+  <hop distance="1">
+     </address addr="10.4.1.7" addrtype="ipv4">
+     </hostname name="router.insecure.org" type="A">
+  </hop>
+  <hop distance="4"> ... </hop>
+</traceroute>
+</timestamp end="966401076">
+</host>
+<host status="down">
+</address addr="192.168.255.255" addrtype="ipv4">
+<smurf responses="417"></smurf>
+</extraports state="filtered" proto="TCP" ids="1-20,400-700,854">
+</host>
+
+
+# Statistics on Nmap run
+<runstats>
+</finished time="966401078" timeout=0>
+</hosts up="4" down="16" total="20">
+<!-- Nmap run completed at Tue Aug 15 22:59:22 2000 -- 20 IP addresses (4 hosts up) scanned in 106 seconds -->
+</runstats>
+</nmaprun>

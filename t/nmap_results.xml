@@ -1,0 +1,162 @@
+<?xml version="1.0" ?>
+<!-- nmap 3.27 scan initiated Tue Jul  1 14:48:03 2003 as: nmap -v -v -v -oX test.xml -O -sTUR -p 1-1023 localhost -->
+<nmaprun scanner="nmap" args="nmap -v -v -v -oX test.xml -O -sTUR -p 1-1023 localhost" start="1057088883" version="3.27" xmloutputversion="1.0">
+<scaninfo type="connect" protocol="tcp" numservices="1023" services="1-1023" />
+<scaninfo type="udp" protocol="udp" numservices="1023" services="1-1023" />
+<verbose level="3" />
+<debugging level="0" />
+<host><status state="up" />
+<address addr="127.0.0.1" addrtype="ipv4" />
+<hostnames><hostname name="localhost.localdomain" type="PTR" /></hostnames>
+<addport state="open" portid="22" protocol="tcp" owner=""/>
+<addport state="open" portid="25" protocol="tcp" owner=""/>
+<addport state="open" portid="443" protocol="tcp" owner=""/>
+<addport state="open" portid="631" protocol="tcp" owner=""/>
+<addport state="open" portid="111" protocol="tcp" owner=""/>
+<addport state="open" portid="80" protocol="tcp" owner=""/>
+<addport state="open" portid="937" protocol="udp" owner=""/>
+<addport state="open" portid="111" protocol="udp" owner=""/>
+<ports><extraports state="closed" count="2038" />
+<port protocol="tcp" portid="22"><state state="filtered" /><service name="ssh" method="table" conf="3"  />
+</port>
+<port protocol="tcp" portid="25"><state state="filtered" /><service name="smtp" method="table" conf="3"  />
+</port>
+<port protocol="tcp" portid="80"><state state="open" /><service name="http" method="table" conf="3"  />
+</port>
+<port protocol="tcp" portid="111"><state state="open" /><service name="rpcbind" proto="rpc" rpcnum="100000" lowver="2" highver="2" method="detection" conf="5" />
+</port>
+<port protocol="udp" portid="111"><state state="open" /><service name="rpcbind" proto="rpc" rpcnum="100000" lowver="2" highver="2" method="detection" conf="5" />
+</port>
+<port protocol="tcp" portid="443"><state state="open" /><service name="https" method="table" conf="3"  />
+</port>
+<port protocol="tcp" portid="631"><state state="open" /><service name="ipp" method="table" conf="3"  />
+</port>
+<port protocol="udp" portid="937"><state state="closed" /></port>
+</ports>
+<os><portused state="open" proto="tcp" portid="22" />
+<portused state="closed" proto="tcp" portid="1" />
+<osclass type="general purpose" vendor='Linux' osfamily='Linux' osgen='2.4.x' accuracy="100"/>
+<osclass type="general purpose" vendor="Sun" osfamily="Solaris" osgen="8" accuracy="100"/>
+<osmatch name="Linux Kernel 2.4.0 - 2.5.20" accuracy="100" />
+</os>
+<uptime seconds="1973" lastboot="Tue Jul  1 14:15:27 2003" />
+<tcpsequence index="4336320" class="random positive increments" difficulty="Good luck!" values="B742FEAF,B673A3F0,B6B42D41,B6C710A1,B6F23FC4,B72FA3A8" />
+<ipidsequence class="All zeros" values="0,0,0,0,0,0"/>
+<tcptssequence class="100HZ" values="30299,302A5,302B1,302BD,302C9,302D5"/>
+</host>
+<host><status state="up" />
+<address addr="127.0.0.2" addrtype="ipv4" />
+<hostnames><hostname name="LocalHost 2" type="PTR" /></hostnames>
+<addport state="open" portid="22" protocol="tcp" owner=""/>
+<addport state="open" portid="80" protocol="tcp" owner=""/>
+<ports><extraports state="closed" count="2044" />
+<port protocol="tcp" portid="22"><state state="open" /><service name="ssh" product="OpenSSH" version="3.5p1" extrainfo="protocol 1.99" method="probed" conf="10" /></port>
+<port protocol="tcp" portid="80"><state state="open" /><service name="http" product="Apache httpd" version="2.0.40" extrainfo="(Red Hat Linux)" method="probed" conf="10" /></port>
+</ports>
+<os><osclass type="general purpose" vendor="Sun" osfamily="Solaris" osgen="8" accuracy="100"/>
+<osmatch name="Sun Solaris 8 early access beta through actual release" accuracy="100" />
+</os>
+<uptime seconds="1838659" lastboot="Wed Jun 11 09:13:35 2003" />
+<tcpsequence index="9999999" class="truly random" difficulty="Good luck!" values="4B1CC657,99519A3F,9F934F86,74DAA2B1,9A935F26,EC151FED" />
+<ipidsequence class="Incremental" values="FF62,FF63,FF64,FF65,FF66,FF67"/>
+<tcptssequence class="100HZ" values="AF591DD,AF591E9,AF591F5,AF59201,AF5920D,AF59219"/>
+</host>
+<host><status state="down" />
+<address addr="127.0.0.3" addrtype="ipv4" />
+</host>
+<host><status state="up" />
+<address addr="127.0.0.4" addrtype="ipv4" />
+<hostnames><hostname name="host1" type="PTR" /></hostnames>
+<ports><extraports state="closed" count="1640" />
+<port protocol="tcp" portid="22"><state state="filtered" /><service name="ssh" method="table" conf="3"  />
+</port>
+<port protocol="tcp" portid="23"><state state="filtered" /><service name="telnet" method="table" conf="3"  />
+</port>
+<port protocol="tcp" portid="80"><state state="filtered" /><service name="http" method="table" conf="3"  />
+</port>
+<port protocol="tcp" portid="135"><state state="filtered" /><service name="loc-srv" method="table" conf="3"  />
+</port>
+</ports>
+</host>
+<host><status state="up" />
+<address addr="127.0.0.5" addrtype="ipv4" />
+<hostnames><hostname name="host2" type="PTR" /></hostnames>
+<ports><extraports state="filtered" count="1644" />
+<port protocol="tcp" portid="22"><state state="open" />
+	<service name="ssh" product="OpenSSH" version="3.1p1" extrainfo="protocol 1.99" method="probed" conf="10" /></port>
+
+<port protocol="tcp" portid="112"><state state="open" />
+	<service name="rpcbind" version="2" method="probed" conf="10" /></port>
+
+<port protocol="tcp" portid="953"><state state="open" />
+	<service name="rndc" method="table" conf="3" /></port>
+
+</ports>
+</host>
+<host><status state="up" />
+<address addr="127.0.0.6" addrtype="ipv4" />
+<hostnames><hostname name="host7.net" type="PTR" /></hostnames>
+<addport state="open" portid="22" protocol="tcp" owner=""/>
+<addport state="open" portid="80" protocol="tcp" owner=""/>
+<ports><extraports state="closed" count="1640" />
+<port protocol="tcp" portid="111"><state state="open" /><service name="rpcbind" version="2" extrainfo="rpc #100000" method="probed" conf="10" /></port>
+<port protocol="tcp" portid="135"><state state="filtered" /><service name="loc-srv" method="table" conf="3"  /></port>
+<port protocol="tcp" portid="22"><state state="open" /><service name="ssh" product="OpenSSH" version="3.5p1" extrainfo="protocol 1.99" method="probed" conf="10" /></port>
+<port protocol="tcp" portid="23"><state state="filtered" /><service name="telnet" method="table" conf="3"  /></port>
+<port protocol="tcp" portid="443"><state state="open" /><service name="http" product="Apache httpd" version="2.0.40" extrainfo="(Red Hat Linux)" method="probed" conf="10" /></port>
+<port protocol="tcp" portid="6000"><state state="open" /><service name="X11" extrainfo="access denied" method="probed" conf="10" /></port>
+<port protocol="tcp" portid="80"><state state="open" /><service name="http" product="Apache httpd" version="2.0.40" extrainfo="(Red Hat Linux)" method="probed" conf="10" /></port>
+</ports>
+<os><osclass type="router" vendor="Redback" osfamily="AOS" accuracy="97"/>
+<osclass type="broadband router" vendor="Thomson" osfamily="embedded" accuracy="97"/>
+<osclass type="switch" vendor="Fore" osfamily="embedded" accuracy="92"/>
+<osclass type="printer" vendor="Xerox" osfamily="embedded" accuracy="91"/>
+<osclass type="broadband router" vendor="Redback" osfamily="embedded" accuracy="90"/>
+<osclass type="firewall" vendor="SonicWall" osfamily="embedded" accuracy="90"/>
+<osclass type="switch" vendor="Enterasys" osfamily="embedded" accuracy="90"/>
+<osclass type="WAP" vendor="Cisco" osfamily="embedded" accuracy="90"/>
+<osclass type="broadband router" vendor="Alcatel" osfamily="embedded" accuracy="90"/>
+<osclass type="general purpose" vendor="Sun" osfamily="SunOS" accuracy="90"/>
+<osclass type="X terminal" vendor="Neoware" osfamily="NetOS" accuracy="89"/>
+<osclass type="X terminal" vendor="HP" osfamily="embedded" accuracy="89"/>
+<osclass type="load balancer" vendor="Cisco" osfamily="embedded" accuracy="89"/>
+<osclass type="terminal server" vendor="Copper Mountain" osfamily="embedded" accuracy="88"/>
+<osclass type="WAP" vendor="3Com" osfamily="embedded" accuracy="88"/>
+<osclass type="telecom-misc" vendor="3Com" osfamily="embedded" accuracy="88"/>
+<osclass type="specialized" vendor="TrueTime" osfamily="embedded" accuracy="88"/>
+<osclass type="specialized" vendor="Compaq" osfamily="embedded" accuracy="88"/>
+<osclass type="terminal server" vendor="Megabit" osfamily="embedded" accuracy="88"/>
+<osclass type="general purpose" vendor="OpenBSD" osfamily="OpenBSD" osgen="2.X" accuracy="88"/>
+<osclass type="general purpose" vendor="Siemens" osfamily="SINIX" accuracy="88"/>
+<osclass type="switch" vendor="Brocade" osfamily="embedded" accuracy="88"/>
+<osclass type="specialized" vendor="Sun" osfamily="embedded" accuracy="88"/>
+<osclass type="general purpose" vendor="Tandem" osfamily="Tandem NSK" accuracy="88"/>
+<osclass type="switch" vendor="Cisco" osfamily="NmpSW" accuracy="88"/>
+<osclass type="general purpose" vendor="NetBSD" osfamily="NetBSD" accuracy="87"/>
+<osclass type="encryption accelerator" vendor="Cisco" osfamily="embedded" accuracy="86"/>
+<osclass type="switch" vendor="3Com" osfamily="embedded" accuracy="86"/>
+<osclass type="web proxy" vendor="Cisco" osfamily="embedded" accuracy="86"/>
+<osclass type="general purpose" vendor="Compaq" osfamily="Tru64 UNIX" osgen="5.X" accuracy="86"/>
+<osclass type="firewall" vendor="Checkpoint" osfamily="IPSO" accuracy="86"/>
+<osclass type="printer" vendor="Savin" osfamily="embedded" accuracy="86"/>
+<osclass type="VoIP phone" vendor="Pigtail" osfamily="VxWorks" accuracy="86"/>
+<osclass type="web proxy" vendor="Cisco" osfamily="CacheOS" accuracy="85"/>
+<osclass type="general purpose" vendor="HP" osfamily="HP-UX" osgen="9.X" accuracy="85"/>
+<osclass type="general purpose" vendor="Siemens" osfamily="ReliantUNIX" accuracy="85"/>
+<osmatch name="Redback SMS 1800/10000 router or Thomson TMC 390 cable modem" accuracy="97" />
+<osmatch name="Redback SMS 1800 router" accuracy="93" />
+<osmatch name="Fore ForeThought 7.1.0 ATM switch" accuracy="92" />
+<osmatch name="Xerox Docuprint N2125 network printer" accuracy="91" />
+<osmatch name="Redback SMS 1000-2000 DSL Router" accuracy="90" />
+<osmatch name="SonicWall SOHO firewall, Enterasys Matrix E1, or Accelerated Networks VoDSL, or Cisco 360 Access Point" accuracy="90" />
+<osmatch name="Alcatel 1000 DSL Router" accuracy="90" />
+<osmatch name="Sun RSC (Remote System Control card) v1.14 (in Solaris 2.7)" accuracy="90" />
+<osmatch name="Cisco 11151/Arrowpoint 150 load balancer, Neoware (was HDS) NetOS V. 2.0.1 or HP ENTRIA C3230A" accuracy="89" />
+</os>
+<tcpsequence index="19825" class="random positive increments" difficulty="Worthy challenge" values="E4C680EA,E4C8D295,E4CB1032,E4CD94FF,E4CF761A,E4D240A2" />
+<ipidsequence class="Incremental" values="C4BE,C4C6,C4CC,C4CE,C4D4,C4DC"/>
+<tcptssequence class="none returned (unsupported)"/>
+</host>
+<runstats><finished time="1057088900" /><hosts up="1" down="0" total="1" />
+<!-- Nmap run completed at Tue Jul  1 14:48:20 2003; 1 IP address (1 host up) scanned in 16.970 seconds -->
+</runstats></nmaprun>
