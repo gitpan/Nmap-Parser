@@ -202,8 +202,8 @@ is($host->os_matches(9), 'Cisco 11151/Arrowpoint 150 load balancer, Neoware (was
 
 
 #OS CLASS
-is_deeply([$host->os_class(1) ],['AOS','','Redback','router','97'],'Testing os_class(1)');
-is_deeply([$host->os_class(15)],['embedded','','3Com','WAP','88'],'Testing os_class(15)');
+is_deeply([$host->os_class(1) ],['AOS',undef,'Redback','router','97'],'Testing os_class(1)');
+is_deeply([$host->os_class(15)],['embedded',undef,'3Com','WAP','88'],'Testing os_class(15)');
 
 is($host->os_osfamily(1),'AOS','Testing os_osfamily');
 is($host->os_vendor(1),'Redback','Testing os_vendor');
