@@ -7,16 +7,17 @@ package Nmap::Parser;
 use strict;
 require 5.004;
 use XML::Twig;
-use vars qw($S %H %OS_LIST %F $DEBUG %R $NMAP_EXE $VERSION);
+use Storable qw(dclone);
+use vars qw($DEBUG $G $NMAP_EXE $VERSION);
 
-$VERSION = '0.79';
+$VERSION = '0.80';
 
 sub new {
 
 my ($class,$self) = shift;
 $class = ref($class) || $class;
 
-$$self{twig}  = new XML::Twig(
+$self->{twig}  = new XML::Twig(
 	start_tag_handlers 	=>
 			{nmaprun => \&_nmaprun_hdlr
                          },
@@ -35,7 +36,7 @@ $$self{twig}  = new XML::Twig(
 #Default Filter Values
 reset_filters();
 
-%OS_LIST = (
+%{$self->{os_list}} = (
 	linux 	=> [qw(linux mandrake redhat slackware)],
 	mac 	=> [qw(mac osx)],
 	solaris => [qw(solaris sparc sun)],
@@ -55,36 +56,37 @@ return $self;
 
 sub set_osfamily_list {
 my $self = shift;my $list = shift;
-%OS_LIST = %{$list};return \%OS_LIST;
+%{$self->{os_list}} = %{$list};return $self->{os_list};
 }
 
-sub get_osfamily_list {return \%OS_LIST;}
+sub get_osfamily_list {my $self = shift; return $self->{os_list};}
 
 sub parse_filters {
 my $self = shift;
 my $filters = shift;
 my $state;
-grep {$F{lc($_)} = $filters->{$_} } keys %$filters;
+grep {$G->{FILTERS}{lc($_)} = $filters->{$_} } keys %$filters;
 
-$$self{twig}->setIgnoreEltsHandlers({
+$self->{twig}->setIgnoreEltsHandlers({
 	'addport'	=> 1,
-	'extraports'	=> ($F{extraports} ? undef : 1),
-	'ports' 	=> ($F{portinfo} ? undef : 1),
-	'tcpsequence' 	=> ($F{sequences} ? undef : 1),
-	'ipidsequence' 	=> ($F{sequences} ? undef : 1),
-	'tcptssequence' => ($F{sequences} ? undef : 1),
-	'os'		=> ($F{osinfo} ? undef : 1),
-	'uptime' 	=> ($F{uptime} ? undef : 1),
-	'scaninfo' 	=> ($F{scaninfo} ? undef : 1),
-	'finished' 	=> ($F{scaninfo} ? undef : 1)
+	'extraports'	=> ($G->{FILTERS}{extraports} ? undef : 1),
+	'ports' 	=> ($G->{FILTERS}{portinfo} ? undef : 1),
+	'tcpsequence' 	=> ($G->{FILTERS}{sequences} ? undef : 1),
+	'ipidsequence' 	=> ($G->{FILTERS}{sequences} ? undef : 1),
+	'tcptssequence' => ($G->{FILTERS}{sequences} ? undef : 1),
+	'os'		=> ($G->{FILTERS}{osinfo} ? undef : 1),
+	'uptime' 	=> ($G->{FILTERS}{uptime} ? undef : 1),
+	'scaninfo' 	=> ($G->{FILTERS}{scaninfo} ? undef : 1),
+	'finished' 	=> ($G->{FILTERS}{scaninfo} ? undef : 1)
         });
 
-return \%F;
+return $G->{FILTERS};
 
 }
 
 sub reset_filters {
-%F = (
+my $self = shift;
+%{$G->{FILTERS}} = (
 	osfamily 	=> 1,
 	osinfo		=> 1,
 	scaninfo	=> 1,
@@ -96,45 +98,67 @@ sub reset_filters {
 	);
 
 
-$_[0]->{twig}->setIgnoreEltsHandlers({
+$self->{twig}->setIgnoreEltsHandlers({
 	addport 	=> 1,
-	}) if(ref($_[0]) eq __PACKAGE__);
+	}) if($self->{twig});
 
 
-return \%F;
+return $G->{FILTERS};
 
 }
 
 
 sub register_host_callback {
 	my $self = shift;
-	$R{host_callback_ref} = shift;
-	if(ref($R{host_callback_ref}) eq 'CODE'){$R{host_callback_register} = 1;}
+	$self->{callback}{host_callback_ref} = shift;
+	if(ref($self->{callback}{host_callback_ref}) eq 'CODE'){$self->{callback}{host_callback_register} = 1;}
 	else {
 	die 'The callback parameter does not seem to be a code reference!';
-	$R{host_callback_register} = undef;}
-	return $R{host_callback_register};
+	$self->{callback}{host_callback_register} = undef;}
+	return $self->{callback}{host_callback_register};
 	}
 
-sub reset_host_callback {$R{host_callback_ref} = $R{host_callback_register}=undef;}
+sub reset_host_callback {my $self = shift;$self->{callback}{host_callback_ref} = $self->{callback}{host_callback_register}=undef;}
 
 ################################################################################
 ##			PARSE METHODS					      ##
 ################################################################################
 #Safe parse and parsefile will return $@ which will contain the error
 #that occured if the parsing failed (it might be empty when no error occurred)
+
+sub _init_vars {
+my $self = shift;
+$G->{OS_LIST} = $self->{os_list};
+$G->{HOSTS_DATA} = undef;
+$G->{SCAN_INFO} = undef;
+$G->{CALLBACK} = $self->{callback};
+return $self;
+}
+
+sub _clean_vars {
+my $self = shift;
+$self->{hosts_data} = dclone($G->{HOSTS_DATA}) if($G->{HOSTS_DATA});
+$self->{scan_info} = dclone($G->{SCAN_INFO}) if($G->{SCAN_INFO});
+$self->{filters}  = $G->{FILTERS};
+$G = undef;
+$G->{FILTERS} = $self->{filters};
+return $self;
+}
+
 sub parse {
 	my $self = shift;
-	%H =();$S = undef;
+	$self->_init_vars;
 	$self->{twig}->safe_parse(@_);
 	if($@){die $@;}
+	$self->_clean_vars;
 	return $self;
 }
 sub parsefile {
 	my $self = shift;
-	%H=();$S = undef;
+	$self->_init_vars();
 	$self->{twig}->safe_parsefile(@_);
 	if($@){die $@;}
+	$self->_clean_vars;
 	return $self;
 }
 
@@ -144,26 +168,37 @@ my $nmap = shift;
 my $args = shift; #get command for nmap scan
 my @ips = @_;
 
+
 my $FH;
-if($args =~ /-o(?:X|N|G)/){die "Nmap-Parser: Cannot pass option '-oX', '-oN' or '-oG' to parscan()";}
+if($args =~ /-o(?:X|N|G)/){die "Nmap-Parser: Cannot pass option '-oX', '-oN' or '-oG' to parsecan()";}
 my $cmd = "$nmap $args -v -v -v -oX - ".(join ' ',@ips);
-open $FH, "$cmd |" || die "Nmap-Parser: Could not perform nmap scan: $!";
+open $FH, "$cmd |" || die "Nmap-Parser: Could not perform nmap scan - $!";
+
+$self->_init_vars;
 $self->parse($FH);
 close $FH;
+$self->_clean_vars;
 return $self;
 }
 
 
-sub clean {%H = ();$S = undef;$_[0]->{twig}->purge;return $_[0];}
+sub clean {
+    my $self = shift;
+    $self->{scan_info} = $self->{hosts_data} = undef;
+    #$self->{twig}->purge;
+    return $self;
+    }
 
 ################################################################################
 ##			POST-PARSE METHODS				      ##
 ################################################################################
 
-sub get_host_list {my $status = lc($_[1]);
+sub get_host_list {
+my $self = shift;    
+my $status = lc(shift);
 if($status eq 'up' || $status eq 'down')
-{return (grep {($H{$_}{status} eq $status)}( sort_ips(keys %H) ))};
-return  sort_ips(keys %H);
+{return (grep {($self->{hosts_data}{$_}{status} eq $status)}( sort_ips(keys %{$self->{hosts_data}}) ))};
+return  sort_ips(keys %{$self->{hosts_data}});
 }
 
 sub sort_ips {
@@ -178,17 +213,20 @@ return (sort {
 	} @_);
 }
 
-sub get_host {shift if(ref($_[0]) eq __PACKAGE__);return $H{$_[0]};}
-sub del_host {shift if(ref($_[0]) eq __PACKAGE__);delete $H{$_[0]};}
-sub get_host_objects {return values (%H);}
+sub get_host {
+    my ($self,$ip) = (@_);
+return (defined $self->{hosts_data}{$ip} ? dclone($self->{hosts_data}{$ip}) : undef);
+	}
+sub del_host {my ($self,$ip) = (@_); delete $self->{hosts_data}{$ip};}
+sub get_host_objects {my $self = shift; return values (%{$self->{hosts_data}});}
 
 sub filter_by_osfamily {
 my $self = shift;
 my @keywords = @_;
 my @os_matched_ips = ();
-for my $addr (keys %H)
+for my $addr (keys %{$self->{hosts_data}})
 {
-	my $os = $H{$addr}{os}{osfamily_names};
+	my $os = $self->{hosts_data}{$addr}{os}{osfamily_names};
 	next unless(defined($os) && ($os ne '') );
 	if(scalar (grep {defined($_) &&  ($os =~ m/$_/)} @keywords))
 	{push @os_matched_ips, $addr;}
@@ -202,11 +240,11 @@ sub filter_by_status {
 my $self= shift;
 my $status = lc(shift);
 $status = 'up' if($status ne 'up' && $status ne 'down');
-return (grep {$H{$_}{status} eq $status} (sort_ips(keys %H)) );
+return (grep {$self->{hosts_data}{$_}{status} eq $status} (sort_ips(keys %{$self->{hosts_data}})) );
 }
 
 
-sub get_scaninfo {return $S;}
+sub get_scaninfo {my $self = shift; return $self->{scan_info};}
 
 
 ################################################################################
@@ -215,13 +253,13 @@ sub get_scaninfo {return $S;}
 #parses nmaprun starting tag
 sub _nmaprun_hdlr {#Last tag in an nmap output
 my ($twig,$host) = @_;
-unless($F{scaninfo}){return;}
-$S->{start_time} = $host->{'att'}->{'start'};
-$S->{nmap_version} = $host->{'att'}->{'version'};
-$S->{startstr} = $host->{'att'}->{'startstr'};
-$S->{xml_version} = $host->{'att'}->{'xmloutputversion'};
-$S->{args} = $host->{'att'}->{'args'};
-$S = Nmap::Parser::ScanInfo->new($S);
+unless($G->{FILTERS}{scaninfo}){return;}
+$G->{SCAN_INFO}{start_time} = $host->{'att'}->{'start'};
+$G->{SCAN_INFO}{nmap_version} = $host->{'att'}->{'version'};
+$G->{SCAN_INFO}{startstr} = $host->{'att'}->{'startstr'};
+$G->{SCAN_INFO}{xml_version} = $host->{'att'}->{'xmloutputversion'};
+$G->{SCAN_INFO}{args} = $host->{'att'}->{'args'};
+$G->{SCAN_INFO} = Nmap::Parser::ScanInfo->new($G->{SCAN_INFO});
 
 $twig->purge;
 }
@@ -232,14 +270,14 @@ sub _scaninfo_hdlr {
 my ($twig,$scan) = @_;
 my ($type,$proto,$num) = ($scan->{'att'}->{'type'},$scan->{'att'}->{'protocol'},
 $scan->{'att'}->{'numservices'});
-if(defined($type)){$S->{type}{$type} = $proto;$S->{numservices}{$type} = $num;}
+if(defined($type)){$G->{SCAN_INFO}{type}{$type} = $proto;$G->{SCAN_INFO}{numservices}{$type} = $num;}
 $twig->purge;}
 
 #last tag (finished)
 sub _finished_hdlr {my ($twig,$host) = @_;
-		    
-$S->{finish_time} = $host->{'att'}->{'time'};
-$S->{timestr} = $host->{'att'}->{'timestr'};
+
+$G->{SCAN_INFO}{finish_time} = $host->{'att'}->{'time'};
+$G->{SCAN_INFO}{timestr} = $host->{'att'}->{'timestr'};
 
 $twig->purge;}
 
@@ -253,36 +291,36 @@ my ($addr,$tmp,$addr_hash);
     # get the element text
     $addr_hash = _addr_hdlr($host);
     $addr = $addr_hash->{'ipv4'}; #use ipv4 as identifier
-    $H{$addr}{addrs} = $addr_hash;
+    $G->{HOSTS_DATA}{$addr}{addrs} = $addr_hash;
     if(!defined($addr) || $addr eq ''){return undef;}
 
     $tmp = $host->first_child('hostnames');
-    @{$H{$addr}{hostnames}} = _hostnames_hdlr($tmp,$addr)
+    @{$G->{HOSTS_DATA}{$addr}{hostnames}} = _hostnames_hdlr($tmp,$addr)
     		if(defined ($tmp = $host->first_child('hostnames')));
-    $H{$addr}{status} = $host->first_child('status')->att('state');
-    if($H{$addr}{status} eq 'down')
+    $G->{HOSTS_DATA}{$addr}{status} = $host->first_child('status')->att('state');
+    if($G->{HOSTS_DATA}{$addr}{status} eq 'down')
     {	$twig->purge;
-	if($F{only_active}){delete $H{$addr};}
-    	else { $H{$addr} = Nmap::Parser::Host->new($H{$addr});}
+	if($G->{FILTERS}{only_active}){delete $G->{HOSTS_DATA}{$addr};}
+    	else { $G->{HOSTS_DATA}{$addr} = Nmap::Parser::Host->new($G->{HOSTS_DATA}{$addr});}
     }
     else {
 
-	    $H{$addr}{ports} = _port_hdlr($host,$addr) if($F{portinfo});
-	    $H{$addr}{os} = _os_hdlr($host,$addr);
-	    $H{$addr}{uptime} = _uptime_hdlr($host,$addr) if($F{uptime});
+	    $G->{HOSTS_DATA}{$addr}{ports} = _port_hdlr($host,$addr) if($G->{FILTERS}{portinfo});
+	    $G->{HOSTS_DATA}{$addr}{os} = _os_hdlr($host,$addr);
+	    $G->{HOSTS_DATA}{$addr}{uptime} = _uptime_hdlr($host,$addr) if($G->{FILTERS}{uptime});
 
-    	if($F{sequences})
+    	if($G->{FILTERS}{sequences})
 	{
-	    $H{$addr}{tcpsequence} = _tcpsequence($host,$addr);
-	    $H{$addr}{ipidsequence} = _ipidsequence($host,$addr);
-	    $H{$addr}{tcptssequence} = _tcptssequence($host,$addr);
+	    $G->{HOSTS_DATA}{$addr}{tcpsequence} = _tcpsequence($host,$addr);
+	    $G->{HOSTS_DATA}{$addr}{ipidsequence} = _ipidsequence($host,$addr);
+	    $G->{HOSTS_DATA}{$addr}{tcptssequence} = _tcptssequence($host,$addr);
 	}
 
-    	$H{$addr} = Nmap::Parser::Host->new($H{$addr});
+    	$G->{HOSTS_DATA}{$addr} = Nmap::Parser::Host->new($G->{HOSTS_DATA}{$addr});
     }
 
-    if($R{host_callback_register})
-    { &{$R{host_callback_ref}}($H{$addr}); delete $H{$addr};}
+    if($G->{CALLBACK}{host_callback_register})
+    { &{$G->{CALLBACK}{host_callback_ref}}($G->{HOSTS_DATA}{$addr}); delete $G->{HOSTS_DATA}{$addr};}
 # purges the twig
     $twig->purge;
 
@@ -321,8 +359,8 @@ unless(defined $tmp){return undef;}
 #EXTRAPORTS STUFF
 my $extraports = $tmp->first_child('extraports');
 if(defined $extraports && $extraports ne ''){
-$H{$addr}{ports}{extraports}{state} = $extraports->{'att'}->{'state'};
-$H{$addr}{ports}{extraports}{count} = $extraports->{'att'}->{'count'};
+$G->{HOSTS_DATA}{$addr}{ports}{extraports}{state} = $extraports->{'att'}->{'state'};
+$G->{HOSTS_DATA}{$addr}{ports}{extraports}{count} = $extraports->{'att'}->{'count'};
 }
 
 #PORT STUFF
@@ -330,18 +368,18 @@ $H{$addr}{ports}{extraports}{count} = $extraports->{'att'}->{'count'};
 for my $p (@list){
 my $proto = $p->{'att'}->{'protocol'};
 my $portid = $p->{'att'}->{'portid'};
-if(defined($proto && $portid)){$H{$addr}{ports}{$proto}{$portid} = _service_hdlr($host,$addr,$p);}
+if(defined($proto && $portid)){$G->{HOSTS_DATA}{$addr}{ports}{$proto}{$portid} = _service_hdlr($host,$addr,$p);}
 my $state = $p->first_child('state');
 if(defined($state) && $state ne '')
-{$H{$addr}{ports}{$proto}{$portid}{'state'} = $state->{'att'}->{'state'} || 'closed';}
+{$G->{HOSTS_DATA}{$addr}{ports}{$proto}{$portid}{'state'} = $state->{'att'}->{'state'} || 'closed';}
 #Added owner information (ident)
 my $owner = $p->first_child('owner');
 if(defined($owner) && $owner ne '')
-{$H{$addr}{ports}{$proto}{$portid}{'owner'} = $owner->{'att'}->{'name'} || '';}
+{$G->{HOSTS_DATA}{$addr}{ports}{$proto}{$portid}{'owner'} = $owner->{'att'}->{'name'} || '';}
 
 }
 
-return $H{$addr}{ports};
+return $G->{HOSTS_DATA}{$addr}{ports};
 }
 
 
@@ -375,24 +413,24 @@ my ($host,$addr) = (shift,shift);
 my ($tmp,@list);
 if(defined(my $os_list = $host->first_child('os'))){
     $tmp = $os_list->first_child("portused[\@state='open']");
-    $H{$addr}{os}{portused}{'open'} = $tmp->{'att'}->{'portid'} if(defined $tmp);
+    $G->{HOSTS_DATA}{$addr}{os}{portused}{'open'} = $tmp->{'att'}->{'portid'} if(defined $tmp);
     $tmp = $os_list->first_child("portused[\@state='closed']");
-    $H{$addr}{os}{portused}{'closed'} = $tmp->{'att'}->{'portid'} if(defined $tmp);
+    $G->{HOSTS_DATA}{$addr}{os}{portused}{'closed'} = $tmp->{'att'}->{'portid'} if(defined $tmp);
 
 
     for my $o ($os_list->children('osmatch')){push @list, $o->{'att'}->{'name'};  }
-    @{$H{$addr}{os}{names}} = @list;
+    @{$G->{HOSTS_DATA}{$addr}{os}{names}} = @list;
 
-    $H{$addr}{os}{osfamily_names} = _match_os(@list) if($F{osfamily} && $F{osinfo});
+    $G->{HOSTS_DATA}{$addr}{os}{osfamily_names} = _match_os(@list) if($G->{FILTERS}{osfamily} && $G->{FILTERS}{osinfo});
 
     @list = ();
     for my $o ($os_list->children('osclass'))
     {push @list, [$o->{'att'}->{'osfamily'},$o->{'att'}->{'osgen'},$o->{'att'}->{'vendor'},$o->{'att'}->{'type'},$o->{'att'}->{'accuracy'}];}
-    @{$H{$addr}{os}{osclass}} = @list;
+    @{$G->{HOSTS_DATA}{$addr}{os}{osclass}} = @list;
 
     }
 
-    return $H{$addr}{os};
+    return $G->{HOSTS_DATA}{$addr}{os};
 
 }
 
@@ -452,9 +490,9 @@ shift if(ref($_[0]) eq __PACKAGE__);
 my $os_string = lc(join '', @_);
 $os_string =~ s/\s|\n//g;
 my @matches;
-unless(keys %OS_LIST){return undef;}
-for my $os_family (keys %OS_LIST){
-	my @keywords = @{$OS_LIST{$os_family}};
+unless(keys %{$G->{OS_LIST}}){return undef;}
+for my $os_family (keys %{$G->{OS_LIST}}){
+	my @keywords = @{$G->{OS_LIST}{$os_family}};
 	for my $keyword (@keywords){
 		if($os_string =~ /$keyword/){
 			push @matches, $os_family;}
@@ -550,36 +588,42 @@ sub extraports_count {return $_[0]->{ports}{extraports}{count};}
 
 
 sub _get_ports {
-my $proto = pop;
-my $param = lc($_[1]);
+my $self = shift;
+my $proto = pop; #param might be empty, so this goes first
+my $param = lc(shift);    
+
+#if($Nmap::Parser::G->{FILTERS}{portinfo} == 0){return undef;}
+
 #Error Checking - if the person used port filters, then return undef
-return if($Nmap::Parser::F{portinfo} == 0);
-return unless(ref($_[0]->{ports}{$proto}) eq 'HASH');
+
+return unless(ref($self->{ports}{$proto}) eq 'HASH');
 
 #the port parameter can be set to either any of these also 'open|filtered'
 #can count as 'open' and 'fileterd'. Therefore I need to use a regex from now on
-if($param =~ /[ofc](?:pen|ilter|losed)/  )
+if($param =~ /[ofc](?:pen|ilter|losed)/i  )
 {
 	my @matched_ports;
-	for my $p (keys %{ $_[0]->{'ports'}{$proto}   })
-	{	if($_[0]->{ports}{$proto}{$p}{state} =~ /\Q$param\E/) #escape metacharacters ('|', for example in: open|filtered)
+	for my $p (keys %{ $self->{'ports'}{$proto}   })
+	{	if($self->{ports}{$proto}{$p}{state} =~ /\Q$param\E/) #escape metacharacters ('|', for example in: open|filtered)
 			{push @matched_ports, $p;}
 	}
 	return sort {$a <=> $b} @matched_ports;
 }
-else {return sort {$a <=> $b} (keys %{$_[0]->{ports}{$proto}})}
+else {return sort {$a <=> $b} (keys %{$self->{ports}{$proto}})}
 
 }
 
 sub _get_port_state {
-my $proto = pop;
-my $param = lc($_[1]);
- return undef if($Nmap::Parser::F{portinfo} == 0);
+my $self = shift;
+my $proto = pop; #param might be empty, so this goes first
+my $param = lc(shift);    
+
+#if($Nmap::Parser::G->{FILTERS}{portinfo} == 0){return undef;}
 
 if($proto ne 'tcp' && $proto ne 'udp'){return undef;}
-	if(exists ${$_[0]}{ports}{$proto}{$param})
-		{return $_[0]->{ports}{$proto}{$param}{state};}
-	else {return 'closed';}
+
+if(exists $self->{ports}{$proto}{$param}){return $self->{ports}{$proto}{$param}{state};}
+else {return 'closed';}
 }
 
 #changed this to use _get_ports since it was similar code
@@ -715,9 +759,9 @@ Nmap::Parser - parse nmap scan data with perl
   my $np = new Nmap::Parser;
 
   $nmap_exe = '/usr/bin/nmap';
-  
+
   $np->register_host_callback(\&my_callback)
-  
+
   $np->parsescan($nmap_exe,'-sT -p1-1023', @ips);
 
   # or just parse an existing output file
@@ -919,17 +963,17 @@ method on one of these hosts that were 'down', will return undef.
 
 If set to true, (the default), it will match the OS guessed by nmap with a
 osfamily name that is given in the OS list. See set_osfamily_list(). If
-false, it will disable this matching (a bit of speed up in parsing).
+false, it will disable this matching (less memory usage, faster parsing).
 
 =item I<OSINFO>
 
-If set to true (default) it will parse any OS information found (osclass and
-osmatch tags). Otherwise, it will ignore these tags (faster parsing).
+Enabled by default. If set to true it will parse any OS information found (osclass and
+osmatch tags). Otherwise, it will ignore these tags (less memory usage, faster parsing).
 
 =item I<PORTINFO>
 
 If set to true, parses the port information. (You usually want this enabled).
-This is the default.
+Enabled by default.
 
 =item I<SCANINFO>
 
@@ -941,12 +985,12 @@ and memory usage.
 =item I<SEQUENCES>
 
 If set to true, parses the tcpsequence, ipidsequence and tcptssequence
-information. This is the default.
+information. Enabled by default.
 
 =item I<UPTIME>
 
 If set to true, parses the uptime information (lastboot, uptime-seconds..etc).
-This is the default.
+Enabled by default.
 
 =item B<reset_filters()>
 
@@ -983,6 +1027,11 @@ currently have, it gets deleted from the tree.
  return; # $host_obj will be deleted (similar to del_host()) method
 
  }
+
+This method of parsing and analyzing each host is good for batch processing:
+maybe updating a database of hosts. Sometimes, the classic method might be better
+if you are trying to compare two hosts (for example, what ports two computers have in common).
+
 
 =item B<reset_host_callback>
 
@@ -1279,7 +1328,7 @@ then all ports will return undef.>
 Again, you could filter what ports you wish to receive:
 
  #it can be either 'open', 'filtered', 'closed'
- 
+
  my @filtered_ports = $host_obj->tcp_ports('filtered');
  my @open_ports = $host_obj->tcp_ports('open');
 
@@ -1297,7 +1346,8 @@ more efficient) to:
 
 =item B<tcp_port_state($port)>, B<udp_port_state($port)>
 
-Returns the state of the given tcp/udp port.
+Returns the state of the given tcp/udp port. I<NOTE> that if PORTINFO filter is used, all ports states
+are set to closed.
 
 =item B<tcp_service_confidence($port)>, B<udp_service_confidence($port)>
 
@@ -1496,16 +1546,14 @@ arguments for the nmap command line options passed to parsescan().
  my @hosts = @ARGV; #Get hosts from stdin
 
  #runs the nmap command with hosts and parses it at the same time
- #do not use -oX, -oN or -oG as one of your arguments. It is not allowed here.
  $np->parsescan('nmap','-sS O -p 1-1023',@hosts);
 
- print "Active Hosts Scanned:\n";
- for my $ip ($np->get_host_list('up')){print $ip."\n";}
-
- #... do more stuff with $np ...
-
- __END__
-
+ for my $host ($np->get_host_objects()){
+ 	
+ 	#$host is an Nmap::Parser::Host object
+ 	print $host->hostname."\n";
+ 	
+ }
 
 =head2 Using Register-Callback
 
@@ -1534,12 +1582,43 @@ callback function is called for every host that the parser encounters.
      print 'Scanned IP: '.$host->addr()."\n";
 	 # ... do more stuff with $host ...
 
-	 #when this function returns, the parser will delete the host
-	 #information that it was holding (referring to $host).
-
-     return;
-
+	 #when this function returns, the Nmap::Parser will delete the host
+	 #from memory
  }
+
+=head2 Multiple Instances
+
+This is another way of using Nmap::Parser using multiple instances, for example, to check for host states.
+In this example, we have a set of hosts that have been scanned for tcp services and saved in
+I<base_image.xml>. We now will scan the same hosts, and compare if any new tcp have been open since then
+(good way to look for suspicious new services). Easy security compliance detection.
+
+
+ use Nmap::Parser;
+ my $base = new Nmap::Parser;
+ my $curr = new Nmap::Parser;
+ 
+ 
+ $base->parsefile('base_image.xml'); #load previous state
+ $curr->parsescan($nmap_exe,$args,@ips); #scan current hosts
+ 
+ for my $ip ($curr->get_host_list()) #all ips scanned
+ {
+ 	#assume that IPs in base == IPs in curr scan
+ 	my $ip_base = $base->get_host($ip);
+ 	my $ip_curr = $curr->get_host($ip);
+ 	my %port = ();
+ 	
+ 	#find ports that are open that were not open before
+ 	#by finding the difference in port lists
+	my @diff =  grep { $port{$_} < 2} 
+		   (map {$port{$_}++; $_} 
+		   ($ip_curr->tcp_ports('open'),$ip_base->tcp_ports('open')));
+	
+	print "$ip has these new ports open: ".join(',',@diff) if(scalar @diff);
+ 		
+ }
+ 
 
 =head1 BUG REPORTS AND SUPPORT
 

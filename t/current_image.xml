@@ -1,0 +1,29 @@
+<?xml version="1.0" ?>
+<!-- nmap 3.27 scan initiated Tue Jul  1 14:48:03 2003 as: nmap -v -v -v -oX test.xml -O -sTUR -p 1-1023 localhost -->
+<nmaprun scanner="nmap" args="nmap -v -v -v -oX test.xml -O -sTUR -p 1-1023 localhost" start="1057088883" version="3.27" xmloutputversion="1.0">
+<scaninfo type="connect" protocol="tcp" numservices="1023" services="1-1023" />
+<scaninfo type="udp" protocol="udp" numservices="1023" services="1-1023" />
+<verbose level="3" />
+<debugging level="0" />
+<host><status state="up" />
+<address addr="127.0.0.1" addrtype="ipv4" />
+<address addr="03:F9:5B:1F:19:AE" vendor="Compaq" addrtype="mac" />
+<hostnames><hostname name="LocalHost 2" type="PTR" /></hostnames>
+<addport state="open" portid="22" protocol="tcp" owner=""/>
+<addport state="open" portid="80" protocol="tcp" owner=""/>
+<ports><extraports state="closed" count="2044" />
+<port protocol="tcp" portid="22"><state state="open" /><service name="ssh" product="OpenSSH" version="3.5p1" extrainfo="protocol 1.99" method="probed" conf="10" /></port>
+<port protocol="tcp" portid="80"><state state="open" /><service name="http" product="Apache httpd" version="2.0.40" extrainfo="(Red Hat Linux)" method="probed" conf="10" /></port>
+<port protocol="tcp" portid="6548"><state state="open" /><service name="unknown" product="File Sharing" version="1.0" extrainfo="P2P" method="probed" conf="10" /></port>
+</ports>
+<os><osclass type="general purpose" vendor="Sun" osfamily="Solaris" osgen="8" accuracy="100"/>
+<osmatch name="Sun Solaris 8 early access beta through actual release" accuracy="100" />
+</os>
+<uptime seconds="1838659" lastboot="Fri Jun 11 09:13:35 2003" />
+<tcpsequence index="9999999" class="truly random" difficulty="Good luck!" values="4B1CC657,99519A3F,9F934F86,74DAA2B1,9A935F26,EC151FED" />
+<ipidsequence class="Incremental" values="FF62,FF63,FF64,FF65,FF66,FF67"/>
+<tcptssequence class="100HZ" values="AF591DD,AF591E9,AF591F5,AF59201,AF5920D,AF59219"/>
+</host>
+<runstats><finished time="1057088900" /><hosts up="1" down="0" total="1" />
+<!-- Nmap run completed at Tue Jul  1 14:48:20 2003; 1 IP address (1 host up) scanned in 16.970 seconds -->
+</runstats></nmaprun>

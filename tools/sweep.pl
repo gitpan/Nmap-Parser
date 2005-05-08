@@ -285,17 +285,22 @@ the IPs from the previous example):
 Please submit any bugs to:
 L<http://sourceforge.net/tracker/?group_id=97509&atid=618345>
 
+Please make sure that you submit the xml-output file of the scan which you are having
+trouble. This can be done by running your scan with the I<-oX filename.xml> nmap switch.
+Please remove any important IP addresses for security reasons.
+
+
 =head1 SEE ALSO
 
 L<Nmap::Parser>
 
-The Nmap::Parser page can be found at: L<http://www.nmapparser.com>.
+The Nmap::Parser page can be found at: L<http://www.nmapparser.com> or L<http://npx.sourceforge.net>.
 It contains the latest developments on the module. The nmap security scanner
 homepage can be found at: L<http://www.insecure.org/nmap/>.
 
 =head1 AUTHOR
 
- Anthony G Persaud <ironstar@iastate.edu>
+Anthony G Persaud <ironstar@iastate.edu> L<http://www.anthonypersaud.com>
 
 =head1 COPYRIGHT
 

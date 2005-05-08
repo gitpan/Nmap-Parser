@@ -5,7 +5,7 @@ use strict;
 use blib;
 use File::Spec;
 use Cwd;
-use Test::More tests => 228;
+use Test::More tests => 229;
 use Nmap::Parser;
 no warnings;
 use constant FIRST => 0;
@@ -49,13 +49,14 @@ nmap_parse_end_test();
 ################################################################################
 ##									      ##
 ################################################################################
-sub nmap_parse_test {ok($p->parsefile($FH),'Parsing from nmap data: $FH');}
+sub nmap_parse_test {ok($p->parsefile($FH),"Parsing from nmap data: $FH");}
 
 sub nmap_parse_end_test {
 print "\n\nMemory Clean Test:\n";
-ok($p->del_host(HOST2),'Testing del_host');
+ok($p->del_host(HOST2),'Testing del_host'.HOST2);
 ok(!$p->get_host(HOST2),'Testing for permanent deletion from call');
 is_deeply([$p->get_host_list('up')],[HOST1, HOST4, HOST5, HOST6, HOST7],'Testing for permanent deletion from list');
+ok(!$Nmap::Parser::G->{HOSTS_DATA},'Testing clean memory of temporary global');
 ok($p->clean(),'Testing clean() to clean memory');
 ok(!$p->get_scaninfo(),'Testing clean() against scaninfo');
 is(scalar $p->get_host_list(),undef,'Testing clean() against host list');

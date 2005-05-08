@@ -1,4 +1,4 @@
-Nmap/Parser version 0.79
+Nmap/Parser version 0.80
 ============================
 
 nmap output parser in perl
@@ -7,7 +7,7 @@ This perl module is here to ease the pain of developing scripts or collecting
 network information from nmap scans. Nmap::Parser does its task by parsing the
 information in the output of an nmap scan by using the xml-formatted output.
 An nmap parser for xml scan data using perl. Nmap Parser is a PERL module that
-makes developing security and audit tools using nmap and perl easier. 
+makes developing security and audit tools using nmap and perl easier.
 
 I am trying to balance efficiency with ease of use. If you think something
 can be done differently send your feedback.
@@ -36,6 +36,7 @@ DEPENDENCIES
 This module requires these other modules and libraries:
 
 	XML::Twig 3.16+
+	Storable
 
 In addition, you will need nmap 3.00+. You don't exactly need it, but this
 version of nmap supports the xml output that this module can parse. So, you do
@@ -44,7 +45,13 @@ not really need the executable, but the xml output that you will be parsing
 
 CHANGES
 
-Changes from 0.78 to 0.79
+Changes from 0.78 to 0.80
+	- Support for multiple instances of Nmap::Parser objects without overwriting data
+	- All data (except filters) is are localized per object
+	- The use of Storable (dclone) to correctly make duplicate of data structured
+	- When filters are used to skip portinfo, all ports return state of 'closed'.
+	- Nmap::Parser::XML no longer supported in distribution
+		(you should change all calls to Nmap::Parser::XML to Nmap::Parser)
 	- fixed ports that were declared as 'open|filtered'
 	    these now are counted as both 'open' and 'filtered'
 	    when using tcp_ports() and udp_ports().

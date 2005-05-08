@@ -3,7 +3,8 @@ use ExtUtils::MakeMaker;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 
-my %depends = (XML::Twig   => 3.16);
+my %depends = (XML::Twig   => 3.16,
+               Storable    => 2);
 
 WriteMakefile(
     ABSTRACT		=> 'Nmap output parser for scan data',

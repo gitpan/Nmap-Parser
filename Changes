@@ -6,6 +6,15 @@ Latest version: http://sourceforge.net/projects/npx
 Website:        http://www.nmapparser.com
 		http://npx.sourceforge.net
 
+
+Changes for 0.80
+	- Support for multiple instances of Nmap::Parser objects without overwriting data
+	- All data (except filters) is are localized per object
+	- The use of Storable (dclone) to correctly make duplicate of data structured
+	- When filters are used to skip portinfo, all ports return state of 'closed'.
+	- Nmap::Parser::XML no longer supported in distribution
+		(you should change all calls to Nmap::Parser::XML to Nmap::Parser)
+		
 Changes for 0.79
 	- fixed ports that were declared as 'open|filtered'
 	    these now are counted as both 'open' and 'filtered'
@@ -229,10 +238,6 @@ Changes for 0.40
 		Host trees are now full of these *::Host objects.
 	- fixed minor bugs with parsing the xml files.
 	- some memory usage improvments.
-
-Changes for 0.01
-	- original version; created by h2xs 1.22 with options
-		-X -n Nmap::Parser
 
 COPYRIGHT AND LICENCE
 

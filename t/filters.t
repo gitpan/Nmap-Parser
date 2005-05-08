@@ -16,7 +16,7 @@ use constant HOST4 => '127.0.0.4';
 use constant HOST5 => '127.0.0.5';
 use constant HOST6 => '127.0.0.6';
 use vars qw($t1 $t2);
-use constant COUNT =>10 ;
+use constant COUNT =>2 ;
 $|=1;
 
 eval {require Time::HiRes;};
@@ -54,7 +54,7 @@ $t2 = Time::HiRes::tv_interval($t2,[Time::HiRes::gettimeofday()]);
 is($p->get_scaninfo(),undef,'Testing start tag /w filters');
 is($p->get_scaninfo(),undef,'Testing full tag /w filters');
 is($p->get_host(HOST1)->hostname, 'localhost.localdomain','Testing hostname tag /w filters');
-is($p->get_host(HOST1)->tcp_port_state('111'),undef,'Testing ports /w filters');
+is($p->get_host(HOST1)->tcp_port_state('111'),'closed','Testing ports /w filters');
 
 SKIP:
 {

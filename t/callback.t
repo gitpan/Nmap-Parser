@@ -32,9 +32,22 @@ $p = new Nmap::Parser;
 isa_ok($p, 'Nmap::Parser');
 ok($p->register_host_callback(\&my_callback),'Registering callback funciton');
 is($p->reset_host_callback(),undef,'Reset host callback');
-ok($p->register_host_callback(\&my_callback),'Registering callback funciton again');
+ok($p->register_host_callback(\&my_callback),'Re-registering callback funciton');
 ok($p->parsefile($FH),'Parsing from nmap data: $FH');
-ok($p->parse_filters({scaninfo => 0}), 'Setting parse filter (no scaninfo)');
+
+my %test = (
+	osfamily 	=> 1,
+	osinfo		=> 1,
+	scaninfo	=> 0,
+	only_active	=> 0,
+	sequences 	=> 1,
+	portinfo	=> 1,
+	uptime		=> 1,
+	extraports	=> 1,
+	);
+
+is_deeply($p->parse_filters({scaninfo => 0}),\%test,'Setting parse filter (no scaninfo)');
+
 
 sub my_callback {
 my $host = shift;
@@ -44,10 +57,9 @@ $total_count++;}
 if($host->status eq 'up'){push @up, $addr;}
 elsif($host->status eq 'down'){push @down, $addr;}
 
-if($host->addr() eq HOST1){nmap_parse_host_test_1();}
-elsif($host->addr() eq HOST6){nmap_parse_host_test_6();}
+if($host->addr() eq HOST1){nmap_parse_host_test_1($host);}
+elsif($host->addr() eq HOST6){nmap_parse_host_test_6($host);}
 else{isa_ok($host,'Nmap::Parser::Host');}
-
 }
 
 #TESTING CALLBACK OUTPUT
@@ -69,7 +81,7 @@ is(scalar @hosts, 0 , 'Making sure objects were deleted after callback');
 
 sub nmap_parse_host_test_1 {
 print "\n\nTesting ".HOST1."\n";
-isa_ok($host = $p->get_host(HOST1),'Nmap::Parser::Host');
+isa_ok($host = shift,'Nmap::Parser::Host');
 
 #BASIC
 is($host->status(), 'up', 'Testing if status = up');
@@ -160,7 +172,7 @@ is($host->uptime_lastboot() ,'Tue Jul  1 14:15:27 2003', 'Testing uptime_lastboo
 ################################################################################
 sub nmap_parse_host_test_6 {
 print "\n\nTesting ".HOST6."\n";
-isa_ok($host = $p->get_host(HOST6),'Nmap::Parser::Host');
+isa_ok($host = shift,'Nmap::Parser::Host');
 
 #BASIC
 is($host->status(), 'up', 'Testing if status = up');
