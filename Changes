@@ -4,9 +4,38 @@ Latest version: http://sourceforge.net/projects/npx
 		http://search.cpan.org/~apersaud/Nmap-Parser/
 
 Website:        http://www.nmapparser.com
-		http://npx.sourceforge.net
-
-
+		
+Changes for 1.00
+	- To see the changes, please read over the new documentation
+        - Internal code is much (MUCH) cleaner and readable
+        - removed 'ducttape' fixes and made stable & roubust changes
+	- improved performance, removed unwanted code (legacy)
+	- complete overhaul of internal code - new Framework
+	- support for IPv6 addresses
+	- data overwrite (overflow) protection
+	- better support for multiple instances
+	- fixed some minor bugs
+	- process owner information obtained
+	- all OS accuracy information obtained
+	- some functions now take new parameters (more concise)
+	- some functions renamed for clarity
+	- new shortcut functions (for doing repetitive tasks easier)
+	- Removed parsing filters (finally)
+	- All indexes now start at 0 (not at 1).
+	- Removed internal OS generic matching function since this is given by
+	    nmap now in the osclass tags
+	- Removed the use of constants for indexes
+	- Nmap::Parser::Host::Service object
+	    provides OO interface to service information for a given port
+	- Nmap::Parser::Host::OS object
+	    provides OO interface to OS signature information for a given host
+	- Nmap::Parser::Session replaces old Nmap::Parser::ScanInfo package
+	- Nmap2SQLite security script included
+	- removed old security tools
+	- rewrote scan.pl (from scanhost.pl)
+	- rewrote old tools to fit new framework
+	- Fully updated documentation
+	
 Changes for 0.80
 	- Support for multiple instances of Nmap::Parser objects without overwriting data
 	- All data (except filters) is are localized per object
@@ -241,7 +270,7 @@ Changes for 0.40
 
 COPYRIGHT AND LICENCE
 
-Copyright (C) 2003-2005 Anthony G Persaud <ironstar@iastate.edu> <http://www.anthonypersaud.com>
+Copyright (C) 2003-2005 Anthony G Persaud <apersaud@gmail.com> <http://www.anthonypersaud.com>
 
  http://www.opensource.org/licenses/gpl-license.php
 

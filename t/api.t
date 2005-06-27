@@ -1,112 +1,132 @@
 #!/usr/bin/perl
 
+
 use strict;
 use blib;
 use File::Spec;
 use Cwd;
-use Test::More tests => 86;
-use vars qw($host $p $FH $scaninfo @test %test $test);
-use_ok('Nmap::Parser');
-no warnings;
-$p = new Nmap::Parser;
-$scaninfo = new Nmap::Parser::ScanInfo;
-$host = new Nmap::Parser::Host;
+use Test::More tests => 84;
+use vars qw(@PARSER @SESSION @HOST @OS @SERVICE);
+use Nmap::Parser;
 
-my @ScanInfo = qw(
-args
-finish_time
-nmap_version
-num_of_services
-proto_of_scan_type
-scan_types
-start_time
-xml_version
-start_str
-time_str
+
+my $parser  = new Nmap::Parser;
+my $session = new Nmap::Parser::Session;
+my $host    = new Nmap::Parser::Host;
+my $service = new Nmap::Parser::Host::Service;
+my $os      = new Nmap::Parser::Host::OS;
+
+
+isa_ok( $parser , 'Nmap::Parser');
+isa_ok( $session,'Nmap::Parser::Session');
+isa_ok( $host,'Nmap::Parser::Host');
+isa_ok( $service,'Nmap::Parser::Host::Service');
+isa_ok( $os,'Nmap::Parser::Host::OS');
+
+for(sort @PARSER){can_ok($parser,$_);}
+for(sort @SESSION){can_ok($session,$_);}
+for(sort @HOST){can_ok($host,$_);}
+for(sort @SERVICE){can_ok($service,$_);}
+for(sort @OS){can_ok($os,$_);}
+
+
+
+BEGIN {
+    
+
+@PARSER = qw(
+all_hosts
+callback
+purge
+del_host
+get_host
+get_ips
+get_session
+parse
+parsefile
+parsescan
+ipv4_sort
 );
 
-my @Host = qw(
+@SESSION = qw(
+finish_time
+nmap_version
+numservices
+scan_args
+scan_type_proto
+scan_types
+start_str
+start_time
+time_str
+xml_version
+);
+
+@HOST = qw(
 addr
-ipv4_addr
-mac_addr
-mac_vendor
 addrtype
+all_hostnames
 extraports_count
 extraports_state
 hostname
-hostnames
 ipidsequence_class
 ipidsequence_values
-os_accuracy
-os_class
-os_family
-os_gen
-os_match
-os_matches
-os_osfamily
-os_port_used
-os_type
-os_vendor
+ipv4_addr
+ipv6_addr
+mac_addr
+mac_vendor
+os_sig
 status
+tcp_closed_ports
+tcp_filtered_ports
+tcp_open_ports
+tcp_port_count
 tcp_port_state
 tcp_ports
-tcp_ports_count
-tcp_service_confidence
-tcp_service_extrainfo
-tcp_service_method
-tcp_service_name
-tcp_service_owner
-tcp_service_product
-tcp_service_proto
-tcp_service_rpcnum
-tcp_service_tunnel
-tcp_service_version
+tcp_service
 tcpsequence_class
 tcpsequence_index
 tcpsequence_values
 tcptssequence_class
 tcptssequence_values
+udp_closed_ports
+udp_filtered_ports
+udp_open_ports
+udp_port_count
 udp_port_state
 udp_ports
-udp_ports_count
-udp_service_confidence
-udp_service_extrainfo
-udp_service_method
-udp_service_name
-udp_service_owner
-udp_service_product
-udp_service_proto
-udp_service_rpcnum
-udp_service_tunnel
-udp_service_version
+udp_service
 uptime_lastboot
 uptime_seconds
 );
 
-my @Std = qw(
-clean
-del_host
-filter_by_osfamily
-filter_by_status
-get_host
-get_host_list
-get_host_objects
-get_osfamily_list
-get_scaninfo
-parse
-parse_filters
-parsefile
-parsescan
-register_host_callback
-reset_host_callback
-set_osfamily_list
-sort_ips
+@SERVICE = qw(
+confidence
+extrainfo
+method
+name
+owner
+port
+product
+proto
+rpcnum
+tunnel
+version
 );
 
-
-isa_ok( $p , 'Nmap::Parser');
-isa_ok( $scaninfo,'Nmap::Parser::ScanInfo');
-isa_ok( $host,'Nmap::Parser::Host');
-for(sort @Std){can_ok($p,$_);}
-for(sort @ScanInfo){can_ok($scaninfo,$_);}
-for(sort @Host){can_ok($host,$_);}
+@OS = qw(
+all_names
+class_accuracy
+class_count
+name
+name_accuracy
+name_count
+osfamily
+osgen
+portused_closed
+portused_open
+type
+vendor
+);
+    
+    
+}
