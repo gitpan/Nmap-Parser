@@ -4,7 +4,6 @@ Makefile.PL
 MANIFEST			This list of files
 Parser.pm			Core parser
 README				You should read it
-t/api.t
 t/callback.t
 t/instance.t
 t/instance.xml

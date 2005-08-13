@@ -7,7 +7,7 @@ use Storable qw(dclone);
 use vars qw($VERSION %D);
 
 
-$VERSION = 1.01;
+$VERSION = 1.05;
 
 
 #----------------------------------------
@@ -190,11 +190,11 @@ sub _nmaprun_start_tag_hdlr {
 
 	my ($twig, $tag) = @_;
 	
-$D{$$}{SESSION}{start_time}  = $tag->{'att'}->{'start'};
-$D{$$}{SESSION}{nmap_version}= $tag->{'att'}->{'version'};
-$D{$$}{SESSION}{startstr}    = $tag->{'att'}->{'startstr'};
-$D{$$}{SESSION}{xml_version} = $tag->{'att'}->{'xmloutputversion'};
-$D{$$}{SESSION}{args}        = $tag->{'att'}->{'args'};
+$D{$$}{SESSION}{start_time}  = $tag->{att}->{start};
+$D{$$}{SESSION}{nmap_version}= $tag->{att}->{version};
+$D{$$}{SESSION}{start_str}   = $tag->{att}->{startstr};
+$D{$$}{SESSION}{xml_version} = $tag->{att}->{xmloutputversion};
+$D{$$}{SESSION}{scan_args}   = $tag->{att}->{args};
 $D{$$}{SESSION}              = Nmap::Parser::Session->new($D{$$}{SESSION});
 
 $twig->purge;	
@@ -203,9 +203,9 @@ $twig->purge;
 
 sub _scaninfo_tag_hdlr {
 	my ($twig, $tag) = @_;
-	my $type        = $tag->{'att'}->{'type'};
-        my $proto       = $tag->{'att'}->{'protocol'};
-	my $numservices = $tag->{'att'}->{'numservices'};
+	my $type        = $tag->{att}->{type};
+        my $proto       = $tag->{att}->{protocol};
+	my $numservices = $tag->{att}->{numservices};
 	
 	if(defined($type)){ #there can be more than one type in one scan
 		$D{$$}{SESSION}{type}{$type}        = $proto;
@@ -218,8 +218,8 @@ sub _scaninfo_tag_hdlr {
 
 sub _finished_tag_hdlr {
 	my ($twig, $tag) = @_;
-	$D{$$}{SESSION}{finish_time} = $tag->{'att'}->{'time'};
-	$D{$$}{SESSION}{timestr}     = $tag->{'att'}->{'timestr'};
+	$D{$$}{SESSION}{finish_time} = $tag->{att}->{time};
+	$D{$$}{SESSION}{time_str}     = $tag->{att}->{timestr};
 	$twig->purge;
 }
 
@@ -235,9 +235,9 @@ sub _host_tag_hdlr {
 	my $addr_hashref;
 	$addr_hashref = __host_addr_tag_hdlr($tag);
 	#use this as the identifier
-	$id           = $addr_hashref->{'ipv4'} ||
-			$addr_hashref->{'ipv6'} ||
-			$addr_hashref->{'mac'}; #worstcase use MAC
+	$id           = $addr_hashref->{ipv4} ||
+			$addr_hashref->{ipv6} ||
+			$addr_hashref->{mac}; #worstcase use MAC
 	
 	$D{$$}{HOSTS}{$id}{addrs} = $addr_hashref;
 	
@@ -357,7 +357,7 @@ sub __host_port_tag_hdlr {
 			if(defined($proto) && defined($portid));
 		
 		#GET OWNER INFORMATION
-		$port_hashref->{$proto}{$portid}{service}{service_owner} = $owner->{att}->{name}
+		$port_hashref->{$proto}{$portid}{service}{owner} = $owner->{att}->{name}
 			if(defined($owner));
 			
 		#These are added at the end, otherwise __host_service_tag_hdlr will overwrite
@@ -381,18 +381,18 @@ sub __host_service_tag_hdlr {
 	my $portid = shift; #need a way to remember what port this service runs on
 	my $service = $tag->first_child('service[@name]');
 	my $service_hashref;
-	$service_hashref->{service_port}       = $portid;
+	$service_hashref->{port}       = $portid;
 	
 	if(defined $service){
-	$service_hashref->{service_name}       = $service->{att}->{name}  || 'unknown';
-	$service_hashref->{service_version}    = $service->{att}->{version};
-	$service_hashref->{service_product}    = $service->{att}->{product};
-	$service_hashref->{service_extrainfo}  = $service->{att}->{extrainfo};
-	$service_hashref->{service_proto}      = $service->{att}->{proto} || 'unknown';
-	$service_hashref->{service_rpcnum}     = $service->{att}->{rpcnum};
-	$service_hashref->{service_tunnel}     = $service->{att}->{tunnel};
-	$service_hashref->{service_method}     = $service->{att}->{method};
-	$service_hashref->{service_confidence} = $service->{att}->{conf};
+	$service_hashref->{name}       = $service->{att}->{name}  || 'unknown';
+	$service_hashref->{version}    = $service->{att}->{version};
+	$service_hashref->{product}    = $service->{att}->{product};
+	$service_hashref->{extrainfo}  = $service->{att}->{extrainfo};
+	$service_hashref->{proto}      = $service->{att}->{proto} || 'unknown';
+	$service_hashref->{rpcnum}     = $service->{att}->{rpcnum};
+	$service_hashref->{tunnel}     = $service->{att}->{tunnel};
+	$service_hashref->{method}     = $service->{att}->{method};
+	$service_hashref->{confidence} = $service->{att}->{conf};
 	}
 
 	return $service_hashref;
@@ -417,8 +417,8 @@ sub __host_os_tag_hdlr {
 	#This will go in Nmap::Parser::Host::OS
 	my $osmatch_index = 0;
 	for my $osmatch ($os_tag->children('osmatch')){
-		$os_hashref->{osmatch_names}   [$osmatch_index] = $osmatch->{att}->{name};
-		$os_hashref->{osmatch_accuracy}[$osmatch_index] = $osmatch->{att}->{accuracy};
+		$os_hashref->{osmatch_name}   [$osmatch_index] = $osmatch->{att}->{name};
+		$os_hashref->{osmatch_name_accuracy}[$osmatch_index] = $osmatch->{att}->{accuracy};
 		$osmatch_index++;
 		}
 	$os_hashref->{'osmatch_count'} = $osmatch_index;
@@ -430,7 +430,7 @@ sub __host_os_tag_hdlr {
 		$os_hashref->{osclass_osgen}   [$osclass_index] = $osclass->{att}->{osgen};
 		$os_hashref->{osclass_vendor}  [$osclass_index] = $osclass->{att}->{vendor};
 		$os_hashref->{osclass_type}    [$osclass_index] = $osclass->{att}->{type};
-		$os_hashref->{osclass_accuracy}[$osclass_index] = $osclass->{att}->{accuracy};
+		$os_hashref->{osclass_class_accuracy}[$osclass_index] = $osclass->{att}->{accuracy};
 		$osclass_index++;		
 	}
 	$os_hashref->{'osclass_count'} = $osclass_index;
@@ -499,6 +499,7 @@ sub __host_tcptssequence_tag_hdlr {
 ################################################################################
 
 package Nmap::Parser::Session;
+use vars qw($AUTOLOAD);
 
 sub new {
 my $class = shift;
@@ -508,28 +509,37 @@ bless ($self,$class);
 return $self;
 }
 
+#Support for:
+#start_time, start_str, finish_time, time_str, nmap_version, xml_version, scan_args
+sub AUTOLOAD {
+	(my $param = $AUTOLOAD) =~ s{.*::}{}xms;
+	return if($param eq 'DESTROY');
+	no strict 'refs';
+	*$AUTOLOAD = sub {return $_[0]->{lc $param}};	
+	goto &$AUTOLOAD;
+}
+
+
 sub numservices {
 	my $self = shift;
 	my $type = shift || ''; #(syn|ack|bounce|connect|null|xmas|window|maimon|fin|udp|ipproto)
 
-return unless(ref($self->{numservices}) eq 'HASH');
+	return unless(ref($self->{numservices}) eq 'HASH');
 
-if($type ne ''){return $self->{numservices}{$type};}
-else {my $total = 0;for (values %{$self->{numservices}}){$total +=$_;}
-return $total;}#total number of services together
-	}
+	if($type ne ''){return $self->{numservices}{$type};}
+	else {
+		my $total = 0;
+		for (values %{$self->{numservices}}){$total +=$_;}
+		return $total;
+	}#(else) total number of services together
+}
 
-sub start_time 		{return $_[0]->{start_time};}
-sub start_str 		{return $_[0]->{startstr};}
-sub finish_time 	{return $_[0]->{finish_time};}
-sub time_str 		{return $_[0]->{timestr};}
-sub nmap_version 	{return $_[0]->{nmap_version};}
-sub xml_version 	{return $_[0]->{xml_version};}
-sub scan_args 		{return $_[0]->{args};}
+
 sub scan_types 		{return sort {$a cmp $b} (keys %{$_[0]->{type}}) if(ref($_[0]->{type}) eq 'HASH');}
 sub scan_type_proto 	{return $_[1] ? $_[0]->{type}{$_[1]} : undef;}
 
 package Nmap::Parser::Host;
+use vars qw($AUTOLOAD);
 
 sub new {
 my $class = shift;
@@ -575,6 +585,10 @@ sub _get_ports {
 	my $state = lc(shift);    #open, filtered, closed or any combination
 	my @matched_ports = ();
 	
+	#if $state eq '', then tcp_ports or udp_ports was called for all ports
+	#therefore, only return the keys of all ports found
+	if($state eq ''){return sort {$a <=> $b} (keys %{ $self->{ports}{$proto} }) }
+	
 	#the port parameter can be set to either any of these also 'open|filtered'
 	#can count as 'open' and 'filetered'. Therefore I need to use a regex from now on
 	#if $param is empty, then all ports match.
@@ -605,18 +619,6 @@ sub _get_port_state {
 #changed this to use _get_ports since it was similar code
 sub tcp_ports { return _get_ports(@_,'tcp');}
 sub udp_ports { return _get_ports(@_,'udp');}
-
-
-#not if port_state 'open|filtered' && 'open'
-sub tcp_open_ports {return _get_ports($_[0], 'open','tcp');}
-sub udp_open_ports {return _get_ports($_[0], 'open','udp');}
-
-sub tcp_filtered_ports {return _get_ports($_[0], 'filtered','tcp');}
-sub udp_filtered_ports {return _get_ports($_[0], 'filtered','udp');}
-
-sub tcp_closed_ports {return _get_ports($_[0], 'closed','tcp');}
-sub udp_closed_ports {return _get_ports($_[0], 'closed','udp');}
-
 
 sub tcp_port_count {return $_[0]->{ports}{tcp_port_count};}
 sub udp_port_count {return $_[0]->{ports}{udp_port_count};}
@@ -652,23 +654,33 @@ sub udp_service {
 
 sub os_sig {return Nmap::Parser::Host::OS->new($_[0]->{os});}
 
-sub tcpsequence_class  {return $_[0]->{tcpsequence}{class};}
-sub tcpsequence_values {return $_[0]->{tcpsequence}{values};}
-sub tcpsequence_index  {return $_[0]->{tcpsequence}{index};}
 
-
-sub ipidsequence_class  {return $_[0]->{ipidsequence}{class};}
-sub ipidsequence_values {return $_[0]->{ipidsequence}{values};}
-
-
-sub tcptssequence_class  {return $_[0]->{tcptssequence}{class};}
-sub tcptssequence_values {return $_[0]->{tcptssequence}{values};}
-
-sub uptime_seconds  {return $_[0]->{uptime}{seconds};}
-sub uptime_lastboot {return $_[0]->{uptime}{lastboot};}
+#Support for:
+#tcpsequence_class, tcpsequence_values, tcpsequence_index,
+#ipidsequence_class, ipidsequence_values, tcptssequence_values,
+#tcptssequence_class, uptime_seconds, uptime_lastboot
+#tcp_open_ports, udp_open_ports, tcp_filtered_ports, udp_filtered_ports,
+#tcp_closed_ports, udp_closed_ports
+sub AUTOLOAD {
+	(my $param = $AUTOLOAD) =~ s{.*::}{}xms;
+	return if($param eq 'DESTROY');
+	my($type,$val) = split /_/, lc($param);
+	no strict 'refs';
+	
+	if( ($type eq 'tcp' || $type eq 'udp') && ($val eq 'open' || $val eq 'filtered' || $val eq 'closed') ){
+					
+		*$AUTOLOAD = sub {return _get_ports($_[0], $val, $type);};	
+		goto &$AUTOLOAD;
+		
+	} elsif(defined $type && defined $val) {
+		*$AUTOLOAD = sub {return $_[0]->{$type}{$val}};	
+		goto &$AUTOLOAD;
+	} else {die '[Nmap-Parser] method ->'.$param."() not defined!\n";}
+}
 
 
 package Nmap::Parser::Host::Service;
+use vars qw($AUTOLOAD);
 
 sub new {
 my $class = shift;
@@ -678,20 +690,25 @@ bless ($self,$class);
 return $self;
 }
 
-sub name 	{return $_[0]->{service_name};}
-sub port 	{return $_[0]->{service_port};}
-sub proto 	{return $_[0]->{service_proto};}
-sub rpcnum 	{return $_[0]->{service_rpcnum};}
-sub owner 	{return $_[0]->{service_owner};}
-sub version 	{return $_[0]->{service_version};}
-sub product 	{return $_[0]->{service_product};}
-sub extrainfo 	{return $_[0]->{service_extrainfo};}
-sub tunnel 	{return $_[0]->{service_tunnel};}
-sub method	{return $_[0]->{service_method};}
-sub confidence 	{return $_[0]->{service_confidence};}
+
+#Support for:
+#name port proto rpcnum owner version product extrainfo tunnel method confidence
+#this will now only load functions that will be used. This saves
+#on delay (increase speed) and memory
+
+sub AUTOLOAD {
+	(my $param = $AUTOLOAD) =~ s{.*::}{}xms;
+	return if($param eq 'DESTROY');
+	no strict 'refs';
+	
+	*$AUTOLOAD = sub {return $_[0]->{lc $param}};	
+	goto &$AUTOLOAD;
+}
+
 
 
 package Nmap::Parser::Host::OS;
+use vars qw($AUTOLOAD);
 
 sub new {
 my $class = shift;
@@ -705,84 +722,44 @@ sub portused_open   {return $_[0]->{portused}{open};}
 sub portused_closed {return $_[0]->{portused}{closed};}
 
 sub name_count {return $_[0]->{osmatch_count};}
-sub name_accuracy {
-	
-	my $self = shift;
-	my $index = shift || 0;
-	if($index >= $self->{osmatch_count}){
-		$index = $self->{osmatch_count}-1;
-	}
-	
-	return $self->{osmatch_accuracy}[$index];	
-}
-sub name {
-	my $self = shift;
-	my $index = shift || 0;
-	if($index >= $self->{osmatch_count}){
-		$index = $self->{osmatch_count}-1;
-	}
-	
-	return $self->{osmatch_names}[$index];
-}
 
 sub all_names {
     my $self = shift;
     @_=();
     if($self->{osclass_count} < 1){return @_;}
-    if(ref($self->{osmatch_names}) eq 'ARRAY'){
-    return sort @{$self->{osmatch_names}};}
+    if(ref($self->{osmatch_name}) eq 'ARRAY'){
+    return sort @{$self->{osmatch_name}};}
 
 } #given by decreasing accuracy
 
 sub class_count {return $_[0]->{osclass_count};}
 
-sub osfamily {
-	my $self = shift;
-	my $index = shift || 0;
-	if($index >= $self->{osclass_count}){
-		$index = $self->{osclass_count}-1;
-	}
+#Support for:
+#name,names, name_accuracy, osfamily, vendor, type, osgen, class_accuracy
+sub AUTOLOAD {
+	(my $param = $AUTOLOAD) =~ s{.*::}{}xms;
+	return if($param eq 'DESTROY');
+	no strict 'refs';
+	$param = lc($param);
 	
-	return $self->{osclass_osfamily}[$index];
-	
+	$param = 'name' if($param eq 'names');
+	if($param eq 'name' || $param eq 'name_accuracy'){
+		
+		*$AUTOLOAD = sub {_get_info($_[0],$_[1],$param,'osmatch');};		
+		goto &$AUTOLOAD;
+	} else {
+
+		*$AUTOLOAD = sub {_get_info($_[0],$_[1],$param,'osclass');};	
+		goto &$AUTOLOAD;
+	}
 }
 
-
-sub vendor {
-	my $self = shift;
-	my $index = shift || 0;
-	if($index >= $self->{osclass_count}){
-		$index = $self->{osclass_count}-1;
-	}
-	return $self->{osclass_vendor}[$index];
-	
-}
-
-sub osgen {
-	my $self = shift;
-	my $index = shift || 0;
-	if($index >= $self->{osclass_count}){
-		$index = $self->{osclass_count}-1;
-	}
-	return $self->{osclass_osgen}[$index];		
-}
-
-sub type {
-	my $self = shift;
-	my $index = shift || 0;
-	if($index >= $self->{osclass_count}){
-		$index = $self->{osclass_count}-1;
-	}
-	return $self->{osclass_type}[$index];		
-}
-
-sub class_accuracy {
-	my $self = shift;
-	my $index = shift || 0;
-	if($index >= $self->{osclass_count}){
-		$index = $self->{osclass_count}-1;
-	}
-	return $self->{osclass_accuracy}[$index];		
+sub _get_info {
+	my($self,$index,$param,$type) = @_;
+	$index ||= 0;
+	#type is either osclass or osmatch
+	if($index >= $self->{$type.'_count'}){$index = $self->{$type.'_count'}-1;}
+	return $self->{$type.'_'.$param}[$index];		
 }
 
 1;
@@ -804,7 +781,7 @@ Nmap::Parser - parse nmap scan data with perl
     #or
   $np->parsefile($file_xml);
   
-  my $session    = $np->session();
+  my $session    = $np->get_session();
     #a Nmap::Parser::Session object
     
   my $host       = $np->get_host($ip_addr);
@@ -863,6 +840,7 @@ operating system signature information (OS guessed names, classes, osfamily..etc
      |  |-Nmap::Parser::Host::Service -- Port service information
      |  |
      |  |-Nmap::Parser::Host::OS      -- Operating system signature information
+
 
 =head1 METHODS
 
@@ -1049,6 +1027,7 @@ Returns the number of extraports found.
 Returns the state of all the extraports found.
 
 =item B<hostname()>
+
 =item B<hostname($index)>
 
 As a basic call, hostname() returns the first hostname obtained for the given
@@ -1125,11 +1104,11 @@ when the scan was performed.
 Returns the sorted list of TCP|UDP ports respectively that were scanned on this host. Optionally
 a string argument can be given to these functions to filter the list.
 
- $host->tcp_ports('open') #returns all only 'open' ports
+ $host->tcp_ports('open') #returns all only 'open' ports (even 'open|filtered')
  $host->udp_ports('open|filtered'); #matches exactly ports with 'open|filtered'
  
-Note that if a port state is set to 'open|filtered' (or any combination), it will
-be counted as an 'open' port as well as a 'filtered' one.
+I<Note that if a port state is set to 'open|filtered' (or any combination), it will
+be counted as an 'open' port as well as a 'filtered' one.>
 
 =item B<tcp_port_count()>
 
@@ -1149,21 +1128,21 @@ Returns the state of the given port, provided by the port number in $portid.
 =item B<udp_open_ports()>
 
 Returns the list of open TCP|UDP ports respectively. Note that if a port state is
-'open|filtered', it will appear on this list as well. 
+for example, 'open|filtered', it will appear on this list as well. 
 
 =item B<tcp_filtered_ports()>
 
 =item B<udp_filtered_ports()>
 
 Returns the list of filtered TCP|UDP ports respectively. Note that if a port state is
-'open|filtered', it will appear on this list as well. 
+for example, 'open|filtered', it will appear on this list as well. 
 
 =item B<tcp_closed_ports()>
 
 =item B<udp_closed_ports()>
 
 Returns the list of closed TCP|UDP ports respectively. Note that if a port state is
-'closed|filtered', it will appear on this list as well. 
+for example, 'closed|filtered', it will appear on this list as well. 
 
 =item B<tcp_service($portid)>
 
@@ -1268,6 +1247,10 @@ Returns the total number of OS class records obtained from the nmap scan.
 
 =item B<name($index)>
 
+=item B<names()>
+
+=item B<names($index)>
+
 A basic call to name() returns the OS name of the first record which is the name
 with the highest accuracy. If C<$index> is given, it returns the name for the given record. The
 index starts at 0.
@@ -1292,6 +1275,7 @@ If C<$index> is given, it returns the OS family information for the given record
 index starts at 0.
 
 =item B<osgen()>
+
 =item B<osgen($index)>
 
 A basic call to osgen() returns the OS generation information of the first record.
@@ -1330,7 +1314,8 @@ index starts at 0.
 
 I think some of us best learn from examples. These are a couple of examples to help
 create custom security audit tools using some of the nice features
-of the Nmap::Parser module. Hopefully this can double as a tutorial.
+of the Nmap::Parser module. Hopefully this can double as a tutorial. 
+More tutorials (articles) can be found at L<www.nmapparser.com>
 
 =head2 Real-Time Scanning - (no better C<time()> like C<'now'>)
 
@@ -1438,11 +1423,6 @@ L<http://sourceforge.net/tracker/?group_id=97509&atid=618345>
 B<Please make sure that you submit the xml-output file of the scan which you are having
 trouble.> This can be done by running your scan with the I<-oX filename.xml> nmap switch.
 Please remove any important IP addresses for security reasons.
-
-=head2 Feature Requests
-
-Please submit any requests to:
-L<http://sourceforge.net/tracker/?atid=618348&group_id=97509&func=browse>
 
 =head1 SEE ALSO
 

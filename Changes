@@ -5,6 +5,13 @@ Latest version: http://sourceforge.net/projects/npx
 
 Website:        http://www.nmapparser.com
 		
+Changes for 1.05
+	- Major speed improvements (less compile time)
+	- Major reduction in unwanted memory usage
+	- Redundant functions (or less used functions) are now created
+	dynamically. (AUTOLOAD)
+	- Documentation fixes
+	
 Changes for 1.00
 	- To see the changes, please read over the new documentation
         - Internal code is much (MUCH) cleaner and readable
