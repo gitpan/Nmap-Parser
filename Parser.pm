@@ -6,7 +6,7 @@ use XML::Twig;
 use Storable qw(dclone);
 use vars qw($VERSION %D);
 
-$VERSION = 1.10;
+$VERSION = 1.11;
 
 sub new {
 
@@ -393,7 +393,7 @@ sub __host_service_tag_hdlr {
 	$service_hashref->{version}    = $service->{att}->{version};
 	$service_hashref->{product}    = $service->{att}->{product};
 	$service_hashref->{extrainfo}  = $service->{att}->{extrainfo};
-	$service_hashref->{proto}      = $service->{att}->{proto} || 'unknown';
+	$service_hashref->{proto}      = $service->{att}->{proto} || $service->{att}->{protocol} || 'unknown';
 	$service_hashref->{rpcnum}     = $service->{att}->{rpcnum};
 	$service_hashref->{tunnel}     = $service->{att}->{tunnel};
 	$service_hashref->{method}     = $service->{att}->{method};

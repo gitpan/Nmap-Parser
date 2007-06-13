@@ -5,8 +5,9 @@ Latest version: http://sourceforge.net/projects/npx
 
 Website:        http://nmapparser.wordpress.com
 	
-Changes for 1.10
+Changes for 1.11
 	- Added parsing of distance information.
+	- Fixed bug #1671876 on tcp_service() always returning null
 	- Added ignoring of taskend,taskbegin and taskprogress information.
 	- Added tests for nmap 4.20.
 	- Changed lisence to MIT.
