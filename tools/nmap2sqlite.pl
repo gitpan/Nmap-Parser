@@ -7,15 +7,25 @@
 # IP network database can be created using Nmap-Parser and automation.
 #
 #
-#This program is free  software; you can redistribute  it and/or modify it under
-#the terms of the  GNU General Public License  as published by the Free Software
-#Foundation; either  version 2  of the  License, or  (at your  option) any later
-#version.
+#MIT License
 #
-#This program is distributed in the hope that it will be useful, but WITHOUT ANY
-#WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-#PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
 #
+#The above copyright notice and this permission notice shall be included in
+#all copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+#THE SOFTWARE.
 #
 
 use strict;
@@ -40,7 +50,7 @@ GetOptions(
 ) or (pod2usage(-exitstatus => 0, -verbose => 2));
 unless($G{file} || $G{scan}){pod2usage(-exitstatus => 0, -verbose => 2);}
 
-print "\nnmap2sqlite.pl - ( http://www.nmapparser.com )\n",
+print "\nnmap2sqlite.pl - ( http://nmapparser.wordpress.com )\n",
 	('-'x50),"\n\n";
 	
 if($G{scan} && $G{nmap} eq ''){
@@ -300,7 +310,7 @@ L<http://sourceforge.net/tracker/?atid=618348&group_id=97509&func=browse>
 
 L<Nmap::Parser>
 
-The Nmap::Parser page can be found at: L<http://www.nmapparser.com> or L<http://npx.sourceforge.net>.
+The Nmap::Parser page can be found at: L<http://nmapparser.wordpress.com> or L<http://npx.sourceforge.net>.
 It contains the latest developments on the module. The nmap security scanner
 homepage can be found at: L<http://www.insecure.org/nmap/>.
 

@@ -6,13 +6,7 @@ use XML::Twig;
 use Storable qw(dclone);
 use vars qw($VERSION %D);
 
-
-$VERSION = 1.05;
-
-
-#----------------------------------------
-#		NEW			-
-#----------------------------------------
+$VERSION = 1.10;
 
 sub new {
 
@@ -25,6 +19,7 @@ my ($class,$self) = shift;
 $self->{twig}     = new XML::Twig(
 	start_tag_handlers 	=>
 		{nmaprun => \&_nmaprun_start_tag_hdlr },
+		
 	twig_roots 		=> {
 		scaninfo => \&_scaninfo_tag_hdlr,
 		finished => \&_finished_tag_hdlr,
@@ -34,7 +29,10 @@ $self->{twig}     = new XML::Twig(
 		addport 	=> 1,
 		debugging	=> 1,
 		verbose		=> 1,
-		hosts		=> 1
+		hosts		=> 1,
+                taskbegin       => 1,
+                taskend         => 1,
+                taskprogress    => 1
 		}
 		);
 
@@ -43,6 +41,24 @@ return $self;
 }
 
 
+#/*****************************************************************************/
+# NMAP::PARSER OBJECT METHODS
+#/*****************************************************************************/
+
+#Safe parse and parsefile will return $@ which will contain the error
+#that occured if the parsing failed (it might be empty when no error occurred)
+sub _init {
+	my $self = shift;
+	$D{callback} = $self->{callback};
+}
+
+sub _clean {
+	my $self = shift;
+	$self->{SESSION} = dclone($D{$$}{SESSION}) if($D{$$}{SESSION});
+	$self->{HOSTS}   = dclone($D{$$}{HOSTS}  ) if($D{$$}{HOSTS}  );
+	delete $D{$$};
+	delete $D{callback};
+}
 
 sub callback {
 	my $self = shift;
@@ -58,26 +74,6 @@ sub callback {
 	return $self->{callback}{is_registered};
 }
 
-
-################################################################################
-##			PARSE METHODS					      ##
-################################################################################
-#Safe parse and parsefile will return $@ which will contain the error
-#that occured if the parsing failed (it might be empty when no error occurred)
-
-sub _init {
-	my $self = shift;
-	$D{callback} = $self->{callback};
-}
-
-sub _clean {
-	my $self = shift;
-	$self->{SESSION} = dclone($D{$$}{SESSION}) if($D{$$}{SESSION});
-	$self->{HOSTS}   = dclone($D{$$}{HOSTS}  ) if($D{$$}{HOSTS}  );
-	delete $D{$$};
-	delete $D{callback};
-}
-
 sub parse {
 	my $self = shift;
 	$self->_init();
@@ -86,7 +82,7 @@ sub parse {
 	$self->_clean();
 	$self->purge;
 	return $self;
-	}
+}
 
 sub parsefile {
 	my $self = shift;
@@ -96,7 +92,7 @@ sub parsefile {
 	$self->_clean();
 	$self->purge;
 	return $self;
-	}
+}
 
 sub parsescan {
 	my $self = shift;
@@ -105,8 +101,10 @@ sub parsescan {
 	my @ips = @_;
 	my $FH;
 
-	if($args =~ /-o(?:X|N|G)/)
-	{die "[Nmap-Parser] Cannot pass option '-oX', '-oN' or '-oG' to parsecan()";}
+	if($args =~ /-o(?:X|N|G)/){
+		die "[Nmap-Parser] Cannot pass option '-oX', '-oN' or '-oG' to parsecan()";
+	}
+	
 	my $cmd = "$nmap $args -v -v -v -oX - ".(join ' ',@ips);
 	open $FH, "$cmd |" || die "[Nmap-Parser] Could not perform nmap scan - $!";
 	$self->_init();
@@ -116,22 +114,26 @@ sub parsescan {
 	$self->purge;
 	return $self;
 	
-	}
+}
 
 
-sub purge { my $self = shift; $self->{twig}->purge; return $self;  }
+sub purge {
+	my $self = shift;
+	$self->{twig}->purge;
+	return $self;
+}
 
 sub ipv4_sort {
-my $self = shift;
-
-return (sort {
-	my @ipa = split('\.',$a);
-	my @ipb = split('\.',$b);
-		$ipa[0] <=> $ipb[0] ||
-		$ipa[1] <=> $ipb[1] ||
-		$ipa[2] <=> $ipb[2] ||
-		$ipa[3] <=> $ipb[3]
-	} @_);
+	my $self = shift;
+	
+	return (sort {
+		my @ipa = split('\.',$a);
+		my @ipb = split('\.',$b);
+			$ipa[0] <=> $ipb[0] ||
+			$ipa[1] <=> $ipb[1] ||
+			$ipa[2] <=> $ipb[2] ||
+			$ipa[3] <=> $ipb[3]
+		} @_);
 }
 
 
@@ -140,7 +142,7 @@ sub get_session {
 	my $self = shift;
 	my $obj = Nmap::Parser::Session->new($self->{SESSION});
 	return $obj;
-	}
+}
 
 #HOST STUFF
 sub get_host {
@@ -182,9 +184,9 @@ sub get_ips {
 }
 
 
-################################################################################
-##				Parsing	Tag Handlers        		      ##
-################################################################################
+#/*****************************************************************************/
+# PARSING TAG HANDLERS FOR XML::TWIG
+#/*****************************************************************************/
 
 sub _nmaprun_start_tag_hdlr {
 
@@ -258,6 +260,9 @@ sub _host_tag_hdlr {
 	    $D{$$}{HOSTS}{$id}{tcpsequence}   = __host_tcpsequence_tag_hdlr($tag);
 	    $D{$$}{HOSTS}{$id}{ipidsequence}  = __host_ipidsequence_tag_hdlr($tag);
 	    $D{$$}{HOSTS}{$id}{tcptssequence} = __host_tcptssequence_tag_hdlr($tag);
+	    $D{$$}{HOSTS}{$id}{distance}      = __host_distance_tag_hdlr($tag); #returns simple value
+	    
+	    
 	
 	}	
 	#CREATE HOST OBJECT FOR USER
@@ -404,6 +409,7 @@ sub __host_os_tag_hdlr {
 	my $os_tag = $tag->first_child('os');
 	my $os_hashref;
 	my $portused_tag;
+	my $os_fingerprint;
 	
 	if(defined $os_tag){
 	#get the open port used to match os
@@ -414,6 +420,10 @@ sub __host_os_tag_hdlr {
 	$portused_tag = $os_tag->first_child("portused[\@state='closed']");
 	$os_hashref->{portused}{closed} = $portused_tag->{att}->{portid} if(defined $portused_tag);
 	
+	#os fingerprint
+        $os_fingerprint = $os_tag->first_child("osfingerprint");
+        $os_hashref->{os_fingerprint} = $os_fingerprint->{'att'}->{'fingerprint'} if(defined $os_fingerprint);
+
 	#This will go in Nmap::Parser::Host::OS
 	my $osmatch_index = 0;
 	for my $osmatch ($os_tag->children('osmatch')){
@@ -436,6 +446,7 @@ sub __host_os_tag_hdlr {
 	$os_hashref->{'osclass_count'} = $osclass_index;
 	}
 	
+
 	return $os_hashref;	
 	
 }
@@ -492,21 +503,28 @@ sub __host_tcptssequence_tag_hdlr {
 	return $sequence_hashref;
 	}
 
+sub __host_distance_tag_hdlr {
+	my $tag = shift;
+	my $distance = $tag->first_child('distance');
+	return undef unless($distance);
+	return $distance->{att}->{value};
+}
 
 
-################################################################################
-##			Nmap::Parser::Session			              ##
-################################################################################
+
+#/*****************************************************************************/
+# NMAP::PARSER::SESSION
+#/*****************************************************************************/
 
 package Nmap::Parser::Session;
 use vars qw($AUTOLOAD);
 
 sub new {
-my $class = shift;
-$class    = ref($class) || $class;
-my $self  =  shift      || {};
-bless ($self,$class);
-return $self;
+	my $class = shift;
+	$class    = ref($class) || $class;
+	my $self  =  shift      || {};
+	bless ($self,$class);
+	return $self;
 }
 
 #Support for:
@@ -537,6 +555,12 @@ sub numservices {
 
 sub scan_types 		{return sort {$a cmp $b} (keys %{$_[0]->{type}}) if(ref($_[0]->{type}) eq 'HASH');}
 sub scan_type_proto 	{return $_[1] ? $_[0]->{type}{$_[1]} : undef;}
+
+
+
+#/*****************************************************************************/
+# NMAP::PARSER::HOST
+#/*****************************************************************************/
 
 package Nmap::Parser::Host;
 use vars qw($AUTOLOAD);
@@ -576,7 +600,7 @@ sub hostname  {
 sub all_hostnames {return @{$_[0]->{hostnames}};}
 sub extraports_state {return $_[0]->{ports}{extraports}{state};}
 sub extraports_count {return $_[0]->{ports}{extraports}{count};}
-
+sub distance {return $_[0]->{distance}; }
 
 
 sub _get_ports {
@@ -665,19 +689,26 @@ sub AUTOLOAD {
 	(my $param = $AUTOLOAD) =~ s{.*::}{}xms;
 	return if($param eq 'DESTROY');
 	my($type,$val) = split /_/, lc($param);
+	#splits the given method name by '_'. This will determine the function and param
 	no strict 'refs';
 	
 	if( ($type eq 'tcp' || $type eq 'udp') && ($val eq 'open' || $val eq 'filtered' || $val eq 'closed') ){
 					
+		#they must be looking for port info: tcp or udp. The $val is either open|filtered|closed
 		*$AUTOLOAD = sub {return _get_ports($_[0], $val, $type);};	
 		goto &$AUTOLOAD;
 		
 	} elsif(defined $type && defined $val) {
+		#must be one of the 'sequence' functions asking for class/values/index
 		*$AUTOLOAD = sub {return $_[0]->{$type}{$val}};	
 		goto &$AUTOLOAD;
 	} else {die '[Nmap-Parser] method ->'.$param."() not defined!\n";}
 }
 
+
+#/*****************************************************************************/
+# NMAP::PARSER::HOST::SERVICE
+#/*****************************************************************************/
 
 package Nmap::Parser::Host::Service;
 use vars qw($AUTOLOAD);
@@ -706,6 +737,10 @@ sub AUTOLOAD {
 }
 
 
+#/*****************************************************************************/
+# NMAP::PARSER::HOST::OS
+#/*****************************************************************************/
+
 
 package Nmap::Parser::Host::OS;
 use vars qw($AUTOLOAD);
@@ -720,6 +755,7 @@ return $self;
 
 sub portused_open   {return $_[0]->{portused}{open};} 
 sub portused_closed {return $_[0]->{portused}{closed};}
+sub os_fingerprint  {return $_[0]->{os_fingerprint};}
 
 sub name_count {return $_[0]->{osmatch_count};}
 
@@ -1056,6 +1092,10 @@ Explicitly return the MAC address.
 
 Return the vendor information of the MAC.
 
+=item B<distance()>
+
+Return the distance (in hops) of the target machine from the machine that performed the scan.
+
 =item B<os_sig()>
 
 Returns an Nmap::Parser::Host::OS object that can be used to obtain all the
@@ -1292,6 +1332,10 @@ be available for all hosts.
 Returns the open port number used to help identify the OS signatures. This might
 not be available for all hosts.
 
+=item B<os_fingerprint()>
+
+Returns the OS fingerprint used to help identify the OS signatures. This might not be available for all hosts.
+
 =item B<type()>
 
 =item B<type($index)>
@@ -1315,7 +1359,7 @@ index starts at 0.
 I think some of us best learn from examples. These are a couple of examples to help
 create custom security audit tools using some of the nice features
 of the Nmap::Parser module. Hopefully this can double as a tutorial. 
-More tutorials (articles) can be found at L<www.nmapparser.com>
+More tutorials (articles) can be found at L<nmapparser.wordpress.com>
 
 =head2 Real-Time Scanning - (no better C<time()> like C<'now'>)
 
@@ -1428,7 +1472,7 @@ Please remove any important IP addresses for security reasons.
 
  nmap, XML::Twig
 
-The Nmap::Parser page can be found at: L<http://www.nmapparser.com>.
+The Nmap::Parser page can be found at: L<http://nmapparser.wordpress.com>.
 It contains the latest developments on the module. The nmap security scanner
 homepage can be found at: L<http://www.insecure.org/nmap/>.
 
@@ -1438,15 +1482,26 @@ Anthony G Persaud <apersaud@gmail.com> L<http://www.anthonypersaud.com>
 
 =head1 COPYRIGHT
 
-This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
+Copyright (c) <2007> <Anthony G. Persaud>
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+MIT License
 
-L<http://www.opensource.org/licenses/gpl-license.php>
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
 
 =cut

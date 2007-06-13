@@ -6,7 +6,7 @@ use blib;
 use Nmap::Parser;
 use File::Spec;
 use Cwd;
-use Test::More tests => 141;
+use Test::More tests => 146;
 
 use constant HOST1 => '127.0.0.1';
 use constant HOST2 => '127.0.0.2';
@@ -146,6 +146,7 @@ sub host_1 {
     
     is($host->tcptssequence_class(),'100HZ','Host1: tcptssequence_class');
     is($host->tcptssequence_values(), '30299,302A5,302B1,302BD,302C9,302D5',  'Host1: tcptssequence_values');
+    is($host->distance(), 1, 'Host1: distance = 1');
     
     isa_ok($np->del_host(HOST1), 'Nmap::Parser::Host','DEL '.HOST1);
     is($np->get_host(HOST1),undef, 'Testing deletion of '.HOST1);
@@ -166,8 +167,9 @@ sub host_1 {
     
     #TESTING OS OBJECT FOR HOST 1
     my $os;
+    my $fingerprint = " SEQ(SP=C5%GCD=1%ISR=C7%TI=Z%II=I%TS=8) ECN(R=Y%DF=Y%T=40%W=16D0%O=M5B4NNSNW2%CC=N%Q=) T1(R=Y%DF=Y%T=40%S=O%A=S+%F=AS%RD=0%Q=) T2(R=N) T3(R=Y%DF=Y%T=40%W=16A0%S=O%A=S+%F=AS%O=M5B4ST11NW2%RD=0%Q=) T4(R=Y%DF=Y%T=40%W=0%S=A%A=Z%F=R%O=%RD=0%Q=) T7(R=Y%DF=Y%T=40%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=) U1(R=Y%DF=N%T=40%TOS=C0%IPL=164%UN=0%RIPL=G%RID=G%RIPCK=G%RUCK=G%RUL=G%RUD=G) IE(R=Y%DFI=N%T=40%TOSI=S%CD=S%SI=S%DLI=S) ";
     isa_ok($os = $host->os_sig(),'Nmap::Parser::Host::OS','os_sig()');
-    
+    is($os->os_fingerprint(), $fingerprint,'HOST1: os_fingerprint()');
     }
 
 sub host_2 {
@@ -253,8 +255,14 @@ sub host_4 {
     is($os->class_accuracy(0),$os->class_accuracy(),'OS: class_accuracy(0)');
     is($os->class_accuracy($count),50,'OS: class_accuracy(MAX)');
     is($os->class_accuracy(15),$os->class_accuracy($count),'OS: class_accuracy(15) = type(MAX)');
-        
+    
+    my $fingerprint = " SCAN(V=4.20%D=6/11%OT=22%CT=%CU=%PV=N%DS=1%G=N%M=001321%TM=466DE2F1%P=i686-pc-windows-windows) T5(Resp=Y%DF=Y%W=0%ACK=S++%Flags=AR%Ops=) T6(Resp=Y%DF=Y%W=0%ACK=O%Flags=R%Ops=) T7(Resp=Y%DF=Y%W=0%ACK=S++%Flags=AR%Ops=) PU(Resp=Y%DF=N%TOS=C0%IPLEN=164%RIPTL=148%RID=E%RIPCK=E%UCK=E%ULEN=134%DAT=E) ";
+    isa_ok($os = $host->os_sig(),'Nmap::Parser::Host::OS','os_sig()');
+    is($os->os_fingerprint(), $fingerprint,'HOST4: os_fingerprint()');
+    
     is($host->tcptssequence_values,undef,'HOST4: tcptssequence_values = undef');
+    is($host->distance(), 10, 'Host4: distance = 10');
+    
     isa_ok($np->del_host(HOST4), 'Nmap::Parser::Host','DEL '.HOST4);
     is($np->get_host(HOST4),undef, 'Testing deletion of '.HOST4);     
     
