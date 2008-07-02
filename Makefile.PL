@@ -10,7 +10,7 @@ my %depends = (XML::Twig   => 3.16,
 
 WriteMakefile(
     ABSTRACT		=> 'parse nmap scan data with perl',
-    AUTHOR		=> 'Anthony G Persaud (apersaud@gmail.com)',
+    AUTHOR		=> 'Anthony Persaud',
     clean		=> {FILES => "*.tar *.old pod2htm* *.htm*"},
     #EXE_FILES   	=> [ map {"tools/$_"} @programs], #soon
     NAME		=> 'Nmap::Parser',
