@@ -5,10 +5,7 @@ use XML::Twig;
 use Storable qw(dclone);
 use vars qw($VERSION %D);
 
-#$Author$
-#$LastChangedDate$
-#$Rev$
-$VERSION = 1.20;
+$VERSION = 1.21;
 
 
 sub new {
@@ -23,6 +20,8 @@ sub new {
 
         twig_roots => {
             scaninfo => \&_scaninfo_tag_hdlr,
+            prescript => \&_prescript_tag_hdlr,
+            postscript => \&_postscript_tag_hdlr,
             finished => \&_finished_tag_hdlr,
             host     => \&_host_tag_hdlr
         },
@@ -144,19 +143,25 @@ sub purge {
     return $self;
 }
 
-sub ipv4_sort {
-    my $self = shift;
+sub addr_sort {
+    my $self = shift if ref $_[0];
 
     return (
-        sort {
-            my @ipa = split( '\.', $a );
-            my @ipb = split( '\.', $b );
-                 $ipa[0] <=> $ipb[0]
-              || $ipa[1] <=> $ipb[1]
-              || $ipa[2] <=> $ipb[2]
-              || $ipa[3] <=> $ipb[3]
-          } @_
-    );
+        map { unpack("x16A*", $_) }
+            sort { $a cmp $b }
+            map {
+                my @vals;
+                if( /:/ ) { #IPv6
+                    @vals = split /:/;
+                    @vals = map { $_ eq '' ? (0) x (8-$#vals) : hex } @vals
+                } else { #IPv4
+                    my @v4 = split /\./;
+                    # Sort as IPv4-mapped IPv6, per RFC 4291 Section 2.5.5.2
+                    @vals = ( (0) x 5, 0xffff, map { 256*$v4[$_] + $v4[$_+1] } (0,2) );
+                }
+                pack("n8A*", @vals, $_)
+            } @_
+        );
 }
 
 #MAIN SCAN INFORMATION
@@ -199,12 +204,12 @@ sub get_ips {
     my $self = shift;
     my $status = shift || '';
 
-    return $self->ipv4_sort( keys %{ $self->{HOSTS} } ) if ( $status eq '' );
+    return $self->addr_sort( keys %{ $self->{HOSTS} } ) if ( $status eq '' );
 
     my @hosts =
       grep { $self->{HOSTS}{$_}{status} eq $status }
       ( keys %{ $self->{HOSTS} } );
-    return $self->ipv4_sort(@hosts);
+    return $self->addr_sort(@hosts);
 
 }
 
@@ -237,6 +242,28 @@ sub _scaninfo_tag_hdlr {
         $D{$$}{SESSION}{type}{$type}        = $proto;
         $D{$$}{SESSION}{numservices}{$type} = $numservices;
     }
+    $twig->purge;
+}
+
+sub _prescript_tag_hdlr {
+    my ( $twig, $tag ) = @_;
+    my $scripts_hashref;
+    for my $script ( $tag->children('script') ) {
+        chomp($scripts_hashref->{ $script->{att}->{id} } =
+          $script->{att}->{output});
+    }
+    $D{$$}{SESSION}{prescript} = $scripts_hashref;
+    $twig->purge;
+}
+
+sub _postscript_tag_hdlr {
+    my ( $twig, $tag ) = @_;
+    my $scripts_hashref;
+    for my $script ( $tag->children('script') ) {
+        chomp($scripts_hashref->{ $script->{att}->{id} } =
+          $script->{att}->{output});
+    }
+    $D{$$}{SESSION}{postscript} = $scripts_hashref;
     $twig->purge;
 }
 
@@ -283,6 +310,7 @@ sub _host_tag_hdlr {
         $D{$$}{HOSTS}{$id}{tcpsequence}   = __host_tcpsequence_tag_hdlr($tag);
         $D{$$}{HOSTS}{$id}{ipidsequence}  = __host_ipidsequence_tag_hdlr($tag);
         $D{$$}{HOSTS}{$id}{tcptssequence} = __host_tcptssequence_tag_hdlr($tag);
+        $D{$$}{HOSTS}{$id}{hostscript} = __host_hostscript_tag_hdlr($tag);
         $D{$$}{HOSTS}{$id}{distance} =
           __host_distance_tag_hdlr($tag);    #returns simple value
         $D{$$}{HOSTS}{$id}{trace}         = __host_trace_tag_hdlr($tag);
@@ -378,6 +406,11 @@ sub __host_port_tag_hdlr {
           __host_service_tag_hdlr( $port_tag, $portid )
           if ( defined($proto) && defined($portid) );
 
+        #GET SCRIPT INFORMATION
+        $port_hashref->{$proto}{$portid}{service}{script} =
+          __host_script_tag_hdlr( $port_tag, $portid)
+          if ( defined($proto) && defined($portid) );
+
         #GET OWNER INFORMATION
         $port_hashref->{$proto}{$portid}{service}{owner} = $owner->{att}->{name}
           if ( defined($owner) );
@@ -418,6 +451,18 @@ sub __host_service_tag_hdlr {
     }
 
     return $service_hashref;
+}
+
+sub __host_script_tag_hdlr {
+    my $tag = shift;
+    my $script_hashref;
+
+    for ( $tag->children('script') ) {
+        chomp($script_hashref->{ $_->{att}->{id} } =
+            $_->{att}->{output});
+    }
+
+    return $script_hashref;
 }
 
 sub __host_os_tag_hdlr {
@@ -499,6 +544,7 @@ sub __host_tcpsequence_tag_hdlr {
     my $sequence_hashref;
     return undef unless ($sequence);
     $sequence_hashref->{class}  = $sequence->{att}->{class};
+    $sequence_hashref->{difficulty}  = $sequence->{att}->{difficulty};
     $sequence_hashref->{values} = $sequence->{att}->{values};
     $sequence_hashref->{index}  = $sequence->{att}->{index};
 
@@ -525,6 +571,18 @@ sub __host_tcptssequence_tag_hdlr {
     $sequence_hashref->{class}  = $sequence->{att}->{class};
     $sequence_hashref->{values} = $sequence->{att}->{values};
     return $sequence_hashref;
+}
+
+sub __host_hostscript_tag_hdlr {
+    my $tag = shift;
+    my $scripts = $tag->first_child('hostscript');
+    my $scripts_hashref;
+    return undef unless ($scripts);
+    for my $script ( $scripts->children('script') ) {
+        chomp($scripts_hashref->{ $script->{att}->{id} } =
+          $script->{att}->{output});
+    }
+    return $scripts_hashref;
 }
 
 sub __host_distance_tag_hdlr {
@@ -628,6 +686,28 @@ sub scan_types {
 }
 sub scan_type_proto { return $_[1] ? $_[0]->{type}{ $_[1] } : undef; }
 
+sub prescripts {
+    my $self = shift;
+    my $id = shift;
+    unless ( defined $id ) {
+        return sort keys %{ $self->{prescript} };
+    }
+    else {
+        return $self->{prescript}{$id};
+    }
+}
+
+sub postscripts {
+    my $self = shift;
+    my $id = shift;
+    unless ( defined $id ) {
+        return sort keys %{ $self->{postscript} };
+    }
+    else {
+        return $self->{postscript}{$id};
+    }
+}
+
 #/*****************************************************************************/
 # NMAP::PARSER::HOST
 #/*****************************************************************************/
@@ -676,6 +756,17 @@ sub all_hostnames    { return @{ $_[0]->{hostnames} }; }
 sub extraports_state { return $_[0]->{ports}{extraports}{state}; }
 sub extraports_count { return $_[0]->{ports}{extraports}{count}; }
 sub distance         { return $_[0]->{distance}; }
+
+sub hostscripts {
+    my $self = shift;
+    my $id = shift;
+    unless ( defined $id ) {
+        return sort keys %{ $self->{hostscript} };
+    }
+    else {
+        return $self->{hostscript}{$id};
+    }
+}
 
 sub all_trace_hops {
 
@@ -828,6 +919,18 @@ sub new {
     my $self = shift || {};
     bless( $self, $class );
     return $self;
+}
+
+sub scripts {
+    my $self = shift;
+    my $id = shift;
+
+    unless ( defined $id ) {
+        return sort keys %{ $self->{script} };
+    }
+    else {
+        return $self->{script}{$id};
+    }
 }
 
 #Support for:
@@ -1001,6 +1104,8 @@ It is implemented by parsing the xml scan data that is generated by nmap. This
 will enable anyone who utilizes nmap to quickly create fast and robust security scripts
 that utilize the powerful port scanning abilities of nmap.
 
+The latest version of this module can be found on here L<https://github.com/apersaud/Nmap-Parser/>
+
 =head1 OVERVIEW
 
 This module has an internal framework to make it easy to retrieve the desired information of a scan.
@@ -1123,14 +1228,13 @@ can be any of the following: C<(up|down|unknown|skipped)>
 =item B<get_ips($status)>
 
 Returns the list of IP addresses that were scanned in this nmap session. They are
-sorted using ipv4_sort. If there are IPv6 addresses, or mixed, it might not be
-in correct sorted order. If the optional status is given, it will only return
+sorted using addr_sort. If the optional status is given, it will only return
 those IP addresses that match that status. The status can be any of the
 following: C<(up|down|unknown|skipped)>
 
-=item B<ipv4_sort(@ips)>
+=item B<addr_sort(@ips)>
 
-This function takes a list of IPv4 addresses and returns the correctly sorted
+This function takes a list of IP addresses and returns the correctly sorted
 version of the list.
 
 =back
@@ -1323,6 +1427,13 @@ rebooted.
 Returns the number of seconds that have passed since the host's last boot from
 when the scan was performed.
 
+=item B<hostscripts()>
+
+=item B<hostscripts($name)>
+
+A basic call to hostscripts() returns a list of the names of the host scripts
+run. If C<$name> is given, it returns the text output of the script with that
+name, or undef if that script was not run.
 
 =item B<tcp_ports()>
 
@@ -1448,6 +1559,14 @@ Returns the service fingerprint. (If available)
 =item B<version()>
 
 Returns the version of the given product of the running service.
+
+=item B<scripts()>
+
+=item B<scripts($name)>
+
+A basic call to scripts() returns a list of the names of the scripts
+run for this port. If C<$name> is given, it returns the text output of the
+script with that name, or undef if that script was not run.
 
 =back
 
@@ -1692,12 +1811,12 @@ same hosts, and compare if any new tcp have been open since then
 
 If you have questions about how to use the module, or any of its features, you
 can post messages to the Nmap::Parser module forum on CPAN::Forum.
-L<http://www.cpanforum.com/dist/Nmap-Parser>
+L<https://github.com/apersaud/Nmap-Parser/issues>
 
 =head2 Bug Reports and Enhancements
 
 Please submit any bugs or feature requests to:
-L<http://code.google.com/p/nmap-parser/issues/list>
+L<https://github.com/apersaud/Nmap-Parser/issues>
 
 B<Please make sure that you submit the xml-output file of the scan which you are having
 trouble with.> This can be done by running your scan with the I<-oX filename.xml> nmap switch.
@@ -1707,14 +1826,18 @@ Please remove any important IP addresses for security reasons. It saves time in 
 
  nmap, XML::Twig
 
-The Nmap::Parser page can be found at: L<http://anthonypersaud.com/category/nmap-parser/> or L<http://code.google.com/p/nmap-parser/>.
+The Nmap::Parser page can be found at: L<https://github.com/apersaud/Nmap-Parser>.
 It contains the latest developments on the module. The nmap security scanner
 homepage can be found at: L<http://www.insecure.org/nmap/>.
 
-=head1 AUTHOR
+=head1 AUTHORS
 
-Anthony G Persaud L<http://anthonypersaud.com> . Please see Changes file for a list of
-other contributors.
+Anthony G Persaud L<http://anthonypersaud.com> . Please see Changes file and CONTRIBUTORS file for a list of other great contributors.
+
+Additional Contributors:
+ * Robin Bowes L<http://robinbowes.com>
+ * Daniel Miller L<https://github.com/bonsaiviking>
+ * See Changes file for other contributors.
 
 =head1 COPYRIGHT
 
